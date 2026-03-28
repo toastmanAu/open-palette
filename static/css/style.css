@@ -30,7 +30,8 @@ body {
   display: grid;
   grid-template-columns: 380px 1fr;
   grid-template-rows: auto 1fr;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 header {
@@ -65,7 +66,8 @@ header h1 span { color: var(--accent); }
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  min-height: 0; /* allow shrinking within grid */
 }
 
 .section-title {
@@ -105,7 +107,7 @@ textarea:focus, input:focus, select:focus {
 
 textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 72px;
 }
 
 select {
@@ -241,9 +243,10 @@ select {
 .main {
   display: flex;
   flex-direction: column;
-  padding: 24px;
-  gap: 20px;
+  padding: 16px 24px;
+  gap: 12px;
   overflow-y: auto;
+  min-height: 0; /* allow shrinking within grid */
 }
 
 /* Progress bar */
@@ -316,9 +319,10 @@ select {
 
 .result-image-container img {
   max-width: 100%;
-  max-height: calc(100vh - 250px);
+  max-height: calc(100vh - 300px);
   border-radius: var(--radius);
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  object-fit: contain;
 }
 
 .result-actions {
@@ -358,9 +362,11 @@ select {
 .gallery-strip {
   display: flex;
   gap: 8px;
-  padding: 12px 0;
+  padding: 8px 0;
   overflow-x: auto;
-  min-height: 80px;
+  min-height: 64px;
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .gallery-strip::-webkit-scrollbar { height: 4px; }
@@ -451,12 +457,25 @@ input[type="range"] {
   .app {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
   }
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--border);
     max-height: 50vh;
   }
+}
+
+/* Compact sidebar on short screens */
+@media (max-height: 900px) {
+  .sidebar { padding: 12px 16px; gap: 10px; }
+  .section-title { margin-bottom: 4px; }
+  .ref-images { gap: 6px; }
+  .ref-slot { border-width: 1px; }
+  header { padding: 8px 20px; }
+  header h1 { font-size: 16px; }
 }
 
 /* Model info badge */
@@ -488,6 +507,11 @@ input[type="range"] {
   display: flex;
   gap: 8px;
   margin-top: auto;
+  flex-shrink: 0;
+  padding-top: 8px;
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
 }
 
 .generate-buttons .btn-generate { flex: 1; }

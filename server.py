@@ -198,10 +198,11 @@ async def get_backends():
                 info["enabled"] = True
                 info["live_models"] = live
                 # Mark each configured model as available or not
+                all_available = set(live.get("checkpoints", []) + live.get("unets", []))
                 for m in info["models"]:
                     mid = m["id"] if isinstance(m, dict) else m
                     if isinstance(m, dict):
-                        m["available"] = mid in live.get("checkpoints", [])
+                        m["available"] = mid in all_available
                     # Add discovered models not in config
                 for discovered in live.get("checkpoints", []):
                     if not any((m["id"] if isinstance(m, dict) else m) == discovered for m in info["models"]):

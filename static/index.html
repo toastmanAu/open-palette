@@ -11,6 +11,7 @@
     <header>
       <h1><span>Open</span> Palette</h1>
       <div class="header-actions">
+        <button class="btn" id="btn-tips">Tips</button>
         <a href="/settings" class="btn">Settings</a>
         <button class="btn" id="btn-gallery-toggle">Gallery</button>
       </div>
@@ -181,6 +182,67 @@
       <div class="modal-footer">
         <button class="btn" id="compare-cancel">Cancel</button>
         <button class="btn-generate" id="compare-start" style="width:auto;padding:10px 24px;">Compare Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tips modal -->
+  <div class="modal-overlay" id="tips-modal">
+    <div class="modal" style="max-width:620px">
+      <div class="modal-header">
+        <h3>Image Generation Tips</h3>
+        <button class="modal-close" id="tips-modal-close">&times;</button>
+      </div>
+      <div style="font-size:13px;line-height:1.7;color:var(--text-dim)">
+        <h4 style="color:var(--text);margin:12px 0 6px">Resolution Matters Most</h4>
+        <p>Each model was trained at a specific resolution. Using the wrong size produces artifacts, blurry images, or repeated patterns.</p>
+        <table style="width:100%;margin:10px 0;font-size:12px;border-collapse:collapse">
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:6px">Model</th>
+            <th style="text-align:left;padding:6px">Best Size</th>
+            <th style="text-align:left;padding:6px">Steps</th>
+            <th style="text-align:left;padding:6px">CFG</th>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:6px">SD 1.5</td><td style="padding:6px">512x512</td><td style="padding:6px">20-30</td><td style="padding:6px">7</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:6px">SDXL / Juggernaut / RealVis</td><td style="padding:6px">1024x1024</td><td style="padding:6px">25-35</td><td style="padding:6px">5-7</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:6px">Gemini (Nano Banana)</td><td style="padding:6px">any up to 1024</td><td style="padding:6px">ignored</td><td style="padding:6px">ignored</td>
+          </tr>
+        </table>
+
+        <h4 style="color:var(--text);margin:12px 0 6px">Prompt Tips</h4>
+        <ul style="padding-left:18px">
+          <li><strong>Be specific:</strong> "a tabby cat sitting on a windowsill, morning light, soft focus" beats "a cat"</li>
+          <li><strong>Style keywords:</strong> Add "photorealistic", "digital painting", "watercolor", "cinematic lighting" etc.</li>
+          <li><strong>Negative prompt:</strong> Use to remove common problems — "blurry, low quality, text, watermark, deformed hands"</li>
+          <li><strong>Quality boosters:</strong> "highly detailed, 8k, sharp focus, professional photography"</li>
+        </ul>
+
+        <h4 style="color:var(--text);margin:12px 0 6px">CFG Scale Guide</h4>
+        <ul style="padding-left:18px">
+          <li><strong>1-4:</strong> Creative, loose interpretation of prompt</li>
+          <li><strong>5-7:</strong> Balanced — follows prompt while staying natural (recommended)</li>
+          <li><strong>8-12:</strong> Strict prompt following, can look over-processed</li>
+          <li><strong>13+:</strong> Usually too high — saturated colours, artifacts</li>
+        </ul>
+
+        <h4 style="color:var(--text);margin:12px 0 6px">Model Strengths</h4>
+        <ul style="padding-left:18px">
+          <li><strong>SD 1.5:</strong> Fast, lightweight. Good for stylised art and quick iterations</li>
+          <li><strong>SDXL Base:</strong> All-rounder. Better detail and composition than SD 1.5</li>
+          <li><strong>Juggernaut XL:</strong> Photorealism specialist. Skin, materials, lighting</li>
+          <li><strong>RealVisXL:</strong> Portrait and scene realism. Lower CFG (4.5-6) for natural look</li>
+          <li><strong>Nano Banana:</strong> Best prompt understanding. Handles complex scenes well</li>
+        </ul>
+
+        <h4 style="color:var(--text);margin:12px 0 6px">Reference Images</h4>
+        <p>Upload 1-4 reference images to guide the style/composition. Works with ComfyUI (IP-Adapter) and Gemini (native multimodal). Set IP-Adapter strength 0.3-0.6 for subtle influence, 0.7+ for strong style matching.</p>
+
+        <p style="margin-top:12px;color:var(--accent)">Settings auto-adjust when you switch models. Override in Advanced Settings if needed.</p>
       </div>
     </div>
   </div>

@@ -14,6 +14,59 @@ const state = {
   comparePollTimer: null,
 };
 
+// Per-model optimal defaults — trained resolutions + recommended settings
+const MODEL_DEFAULTS = {
+  // SD 1.5 — trained on 512x512
+  'v1-5-pruned-emaonly.safetensors': {
+    width: 512, height: 512, steps: 20, cfg: 7.0,
+    tips: 'SD 1.5 works best at 512x512. Higher resolutions produce artifacts. Use 20-30 steps. Good for stylised art, illustrations, and quick drafts.',
+  },
+  // SDXL GGUF variants — trained on 1024x1024
+  'sdxl_base_1.0-Q4_0.gguf': {
+    width: 1024, height: 1024, steps: 25, cfg: 7.0,
+    tips: 'SDXL works best at 1024x1024. Use 20-30 steps. Good all-rounder for both photo and art styles.',
+  },
+  'juggernautXL_juggXIByRundiffusion-Q4_0.gguf': {
+    width: 1024, height: 1024, steps: 30, cfg: 6.0,
+    tips: 'Juggernaut XL excels at photorealism. Use 1024x1024, 25-35 steps, CFG 5-7. Add "photorealistic, detailed" to prompts. Avoid "cartoon" or "anime" unless intended.',
+  },
+  'RealVisXL_V4.0-Q4_0.gguf': {
+    width: 1024, height: 1024, steps: 28, cfg: 5.5,
+    tips: 'RealVisXL is tuned for realistic portraits and scenes. Use 1024x1024, 25-35 steps, CFG 4.5-6.5. Lower CFG = more natural. Great for people, architecture, nature.',
+  },
+  // Gemini models — resolution flexible
+  'gemini-2.5-flash-image': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'Nano Banana handles any resolution up to 1024x1024. Steps/CFG are ignored (cloud model). Strong at photorealism and following complex prompts. Costs ~$0.04/image.',
+  },
+  'gemini-3-pro-image-preview': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'Nano Banana Pro — highest quality Google model. ~$0.13/image. Best for final/hero images where quality matters most.',
+  },
+  'gemini-3.1-flash-image-preview': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'Nano Banana 2 — latest Gemini image model. Good balance of quality and cost.',
+  },
+  'imagen-4.0-fast-generate-001': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'Imagen 4 Fast — cheapest Google option at ~$0.02/image. Good for iteration and drafts.',
+  },
+  'imagen-4.0-generate-001': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'Imagen 4 Standard — high quality at ~$0.04/image. Good default for cloud generation.',
+  },
+  // Pollinations
+  'flux': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'Flux via Pollinations. Requires API token from enter.pollinations.ai.',
+  },
+  // HuggingFace
+  'stabilityai/stable-diffusion-xl-base-1.0': {
+    width: 1024, height: 1024, steps: 30, cfg: 7.0,
+    tips: 'SDXL via HuggingFace Inference API. Uses monthly free credits.',
+  },
+};
+
 // --- Init ---
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -183,10 +236,27 @@ function updateModelInfo() {
   const models = info.models || [];
   const model = models.find(m => (typeof m === 'string' ? m : m.id) === modelId);
   const el = document.getElementById('model-info');
+
+  const parts = [];
   if (model && typeof model === 'object' && model.vram) {
-    el.innerHTML = `<span class="vram">VRAM: ${model.vram}</span>`;
-  } else {
-    el.innerHTML = '';
+    parts.push(`<span class="vram">VRAM: ${model.vram}</span>`);
+  }
+
+  // Show tips from defaults
+  const defaults = MODEL_DEFAULTS[modelId];
+  if (defaults && defaults.tips) {
+    parts.push(`<span class="model-tip">${defaults.tips}</span>`);
+  }
+  el.innerHTML = parts.join('');
+
+  // Auto-apply optimal settings
+  if (defaults) {
+    document.getElementById('width').value = defaults.width;
+    document.getElementById('height').value = defaults.height;
+    document.getElementById('steps').value = defaults.steps;
+    document.getElementById('steps-val').textContent = defaults.steps;
+    document.getElementById('cfg-scale').value = defaults.cfg;
+    document.getElementById('cfg-val').textContent = defaults.cfg.toFixed(1);
   }
 }
 
@@ -251,6 +321,14 @@ function bindEvents() {
   document.getElementById('compare-modal-close').addEventListener('click', closeCompareModal);
   document.getElementById('compare-cancel').addEventListener('click', closeCompareModal);
   document.getElementById('compare-start').addEventListener('click', startComparison);
+
+  // Tips
+  document.getElementById('btn-tips').addEventListener('click', () => {
+    document.getElementById('tips-modal').classList.add('active');
+  });
+  document.getElementById('tips-modal-close').addEventListener('click', () => {
+    document.getElementById('tips-modal').classList.remove('active');
+  });
 }
 
 function setRefImage(index, file) {

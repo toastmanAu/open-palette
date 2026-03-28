@@ -471,6 +471,18 @@ input[type="range"] {
 
 .model-info .vram { color: var(--warning); }
 
+.model-info .model-tip {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-dim);
+  padding: 6px 8px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--accent);
+}
+
 /* Generate buttons row */
 .generate-buttons {
   display: flex;

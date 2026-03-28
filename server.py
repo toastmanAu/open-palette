@@ -11,7 +11,7 @@ from pathlib import Path
 import aiofiles
 import uvicorn
 import yaml
-from fastapi import FastAPI, File, Form, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -56,6 +56,125 @@ app.mount("/outputs", StaticFiles(directory="outputs"), name="outputs")
 @app.get("/")
 async def index():
     return FileResponse("static/index.html")
+
+
+@app.get("/settings")
+async def settings_page():
+    return FileResponse("static/settings.html")
+
+
+# --- Settings API ---
+
+ENV_KEY_MAP = {
+    "pollinations": "POLLINATIONS_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+    "huggingface": "HF_TOKEN",
+    "stability": "STABILITY_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "replicate": "REPLICATE_API_TOKEN",
+}
+
+
+@app.get("/api/settings")
+async def get_settings():
+    """Return backend settings (keys masked)."""
+    result = {}
+    for name, cfg in config.get("backends", {}).items():
+        entry = {
+            "enabled": cfg.get("enabled", False),
+            "url": cfg.get("url", ""),
+            "api_key": cfg.get("api_key", ""),
+            "has_env_key": bool(os.environ.get(ENV_KEY_MAP.get(name, ""), "")),
+        }
+        result[name] = entry
+    return result
+
+
+@app.post("/api/settings")
+async def save_settings(request: Request):
+    """Save backend settings to config.yaml."""
+    request_data = await request.json()
+    if not request_data:
+        return JSONResponse({"error": "No data"}, status_code=400)
+
+    name = request_data.get("backend")
+    if not name or name not in config.get("backends", {}):
+        return JSONResponse({"error": "Unknown backend"}, status_code=400)
+
+    backend_cfg = config["backends"][name]
+
+    if "enabled" in request_data:
+        backend_cfg["enabled"] = request_data["enabled"]
+    if "api_key" in request_data and request_data["api_key"]:
+        backend_cfg["api_key"] = request_data["api_key"]
+    if "url" in request_data:
+        backend_cfg["url"] = request_data["url"]
+
+    # Save to config.yaml
+    cfg_path = Path(__file__).parent / "config.yaml"
+    with open(cfg_path, "w") as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
+
+    # Reinitialize backends
+    registry.init_backends(config.get("backends", {}))
+
+    return {"ok": True}
+
+
+@app.post("/api/settings/test")
+async def test_backend_key(request: Request):
+    """Test an API key against a backend."""
+    request_data = await request.json()
+    if not request_data:
+        return JSONResponse({"error": "No data"}, status_code=400)
+
+    name = request_data.get("backend", "")
+    api_key = request_data.get("api_key", "") or os.environ.get(ENV_KEY_MAP.get(name, ""), "")
+
+    if not api_key:
+        return {"ok": False, "error": "No API key provided"}
+
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=10) as client:
+            if name == "gemini":
+                resp = await client.get(f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}")
+                if resp.status_code == 200:
+                    return {"ok": True, "message": "Gemini API key valid"}
+                return {"ok": False, "error": f"HTTP {resp.status_code}"}
+            elif name == "openai":
+                resp = await client.get("https://api.openai.com/v1/models",
+                                        headers={"Authorization": f"Bearer {api_key}"})
+                if resp.status_code == 200:
+                    return {"ok": True, "message": "OpenAI API key valid"}
+                return {"ok": False, "error": f"HTTP {resp.status_code}"}
+            elif name == "stability":
+                resp = await client.get("https://api.stability.ai/v1/user/account",
+                                        headers={"Authorization": f"Bearer {api_key}"})
+                if resp.status_code == 200:
+                    return {"ok": True, "message": "Stability AI key valid"}
+                return {"ok": False, "error": f"HTTP {resp.status_code}"}
+            elif name == "replicate":
+                resp = await client.get("https://api.replicate.com/v1/account",
+                                        headers={"Authorization": f"Bearer {api_key}"})
+                if resp.status_code == 200:
+                    return {"ok": True, "message": "Replicate token valid"}
+                return {"ok": False, "error": f"HTTP {resp.status_code}"}
+            elif name == "huggingface":
+                resp = await client.get("https://huggingface.co/api/whoami-v2",
+                                        headers={"Authorization": f"Bearer {api_key}"})
+                if resp.status_code == 200:
+                    return {"ok": True, "message": "HuggingFace token valid"}
+                return {"ok": False, "error": f"HTTP {resp.status_code}"}
+            elif name == "pollinations":
+                resp = await client.get(f"https://image.pollinations.ai/prompt/test?key={api_key}&nologo=true&width=64&height=64")
+                if resp.status_code == 200:
+                    return {"ok": True, "message": "Pollinations key valid"}
+                return {"ok": False, "error": f"HTTP {resp.status_code}"}
+            else:
+                return {"ok": False, "error": "No test available for this backend"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 
 # --- API ---

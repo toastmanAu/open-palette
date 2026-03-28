@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Palette — Settings</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    .settings-page {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .settings-page h2 { margin-bottom: 24px; }
+    .backend-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .backend-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .backend-header:hover { background: var(--surface-2); }
+    .backend-header .left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .backend-header .name { font-weight: 600; font-size: 14px; }
+    .backend-header .status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .status.connected { background: rgba(52,211,153,0.15); color: var(--success); }
+    .status.no-key { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .status.local { background: rgba(124,92,252,0.15); color: var(--accent); }
+    .status.disabled { background: var(--surface-3); color: var(--text-dim); }
+    .backend-body {
+      display: none;
+      padding: 0 18px 18px;
+      border-top: 1px solid var(--border);
+    }
+    .backend-body.open { display: block; padding-top: 14px; }
+    .key-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      margin-bottom: 12px;
+    }
+    .key-row .form-group { flex: 1; margin-bottom: 0; }
+    .key-input {
+      font-family: monospace;
+      font-size: 13px;
+    }
+    .btn-test {
+      padding: 10px 16px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .btn-test:hover { border-color: var(--accent); }
+    .btn-save-key {
+      padding: 10px 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .btn-save-key:hover { background: var(--accent-hover); }
+    .test-result {
+      font-size: 12px;
+      margin-top: 6px;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      display: none;
+    }
+    .test-result.pass { display: block; background: rgba(52,211,153,0.1); color: var(--success); }
+    .test-result.fail { display: block; background: rgba(239,68,68,0.1); color: var(--error); }
+    .backend-info {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    .backend-info a { color: var(--accent); }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .toggle-label { font-size: 13px; }
+    .toggle {
+      width: 40px; height: 22px;
+      background: var(--surface-3);
+      border-radius: 11px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle.on { background: var(--accent); }
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      background: white;
+      border-radius: 50%;
+      top: 2px; left: 2px;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(18px); }
+    .url-row { margin-bottom: 12px; }
+    .saved-msg {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 18px;
+      background: var(--surface);
+      border: 1px solid var(--success);
+      border-radius: var(--radius);
+      color: var(--success);
+      font-size: 13px;
+      display: none;
+      z-index: 1000;
+    }
+    .saved-msg.show { display: block; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .back-link:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><span>Open</span> Palette</h1>
+    <div class="header-actions">
+      <a href="/" class="btn">Back to Studio</a>
+    </div>
+  </header>
+
+  <div class="settings-page">
+    <a href="/" class="back-link">&larr; Back to studio</a>
+    <h2>Backend Settings</h2>
+    <p class="backend-info" style="margin-bottom:20px">Configure API keys and connection URLs for each backend. Keys are saved to the server config and persist across restarts.</p>
+    <div id="backend-list"></div>
+  </div>
+
+  <div class="saved-msg" id="saved-msg">Settings saved</div>
+
+  <script>
+    const BACKEND_INFO = {
+      comfyui: {
+        label: 'ComfyUI',
+        type: 'local',
+        needsKey: false,
+        needsUrl: true,
+        description: 'Local node-based image generation. Requires ComfyUI running on your network.',
+        urlPlaceholder: 'http://192.168.68.102:8188',
+      },
+      fooocus: {
+        label: 'Fooocus',
+        type: 'local',
+        needsKey: false,
+        needsUrl: true,
+        description: 'Simple local image generation. Start Fooocus with --api flag.',
+        urlPlaceholder: 'http://127.0.0.1:7865',
+      },
+      a1111: {
+        label: 'Stable Diffusion WebUI',
+        type: 'local',
+        needsKey: false,
+        needsUrl: true,
+        description: 'Automatic1111 WebUI. Start with --api flag.',
+        urlPlaceholder: 'http://127.0.0.1:7861',
+      },
+      pollinations: {
+        label: 'Pollinations.ai',
+        type: 'free',
+        needsKey: true,
+        description: 'Free tier with token from <a href="https://enter.pollinations.ai" target="_blank">enter.pollinations.ai</a>.',
+        keyEnvVar: 'POLLINATIONS_API_KEY',
+        keyPlaceholder: 'pol_...',
+      },
+      gemini: {
+        label: 'Google Gemini / Imagen',
+        type: 'free',
+        needsKey: true,
+        description: 'Free tier available. Get key from <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com</a>. Models include Nano Banana and Imagen 4.',
+        keyEnvVar: 'GEMINI_API_KEY',
+        keyPlaceholder: 'AIza...',
+      },
+      huggingface: {
+        label: 'HuggingFace',
+        type: 'free',
+        needsKey: true,
+        description: 'Free monthly credits. Get token from <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>.',
+        keyEnvVar: 'HF_TOKEN',
+        keyPlaceholder: 'hf_...',
+      },
+      stability: {
+        label: 'Stability AI',
+        type: 'paid',
+        needsKey: true,
+        description: 'Paid API. Get key from <a href="https://platform.stability.ai/account/keys" target="_blank">platform.stability.ai</a>.',
+        keyEnvVar: 'STABILITY_API_KEY',
+        keyPlaceholder: 'sk-...',
+      },
+      openai: {
+        label: 'OpenAI (DALL-E / GPT Image)',
+        type: 'paid',
+        needsKey: true,
+        description: 'Paid API. Uses your OpenAI API key.',
+        keyEnvVar: 'OPENAI_API_KEY',
+        keyPlaceholder: 'sk-...',
+      },
+      replicate: {
+        label: 'Replicate',
+        type: 'paid',
+        needsKey: true,
+        description: 'Pay-per-use. Get token from <a href="https://replicate.com/account/api-tokens" target="_blank">replicate.com</a>.',
+        keyEnvVar: 'REPLICATE_API_TOKEN',
+        keyPlaceholder: 'r8_...',
+      },
+    };
+
+    let serverConfig = {};
+
+    async function init() {
+      const resp = await fetch('/api/settings');
+      serverConfig = await resp.json();
+      renderBackends();
+    }
+
+    function renderBackends() {
+      const list = document.getElementById('backend-list');
+      list.innerHTML = '';
+
+      for (const [name, info] of Object.entries(BACKEND_INFO)) {
+        const cfg = serverConfig[name] || {};
+        const enabled = cfg.enabled || false;
+        const hasKey = !!(cfg.api_key || cfg.has_env_key);
+        const section = document.createElement('div');
+        section.className = 'backend-section';
+
+        let statusClass, statusText;
+        if (info.type === 'local') {
+          statusClass = enabled ? 'connected' : 'disabled';
+          statusText = enabled ? 'connected' : 'disabled';
+        } else if (!info.needsKey) {
+          statusClass = enabled ? 'connected' : 'disabled';
+          statusText = enabled ? 'active' : 'disabled';
+        } else if (hasKey) {
+          statusClass = 'connected';
+          statusText = 'key set';
+        } else {
+          statusClass = 'no-key';
+          statusText = 'no key';
+        }
+
+        section.innerHTML = `
+          <div class="backend-header" onclick="toggleSection(this)">
+            <div class="left">
+              <span class="dot ${info.type}"></span>
+              <span class="name">${info.label}</span>
+              <span class="status ${statusClass}">${statusText}</span>
+            </div>
+            <span class="opt-type ${info.type}">${info.type}</span>
+          </div>
+          <div class="backend-body" id="body-${name}">
+            <div class="backend-info">${info.description}</div>
+            <div class="toggle-row">
+              <span class="toggle-label">Enabled</span>
+              <div class="toggle ${enabled ? 'on' : ''}" data-backend="${name}" onclick="toggleEnabled(this)"></div>
+            </div>
+            ${info.needsUrl ? `
+              <div class="url-row form-group">
+                <label>Server URL</label>
+                <input type="text" class="key-input" id="url-${name}" value="${cfg.url || ''}" placeholder="${info.urlPlaceholder || ''}">
+              </div>
+            ` : ''}
+            ${info.needsKey ? `
+              <div class="key-row">
+                <div class="form-group">
+                  <label>API Key ${cfg.has_env_key ? '(env var detected)' : ''}</label>
+                  <input type="password" class="key-input" id="key-${name}" value="${cfg.api_key || ''}" placeholder="${info.keyPlaceholder || 'Enter API key...'}">
+                </div>
+                <button class="btn-test" onclick="testKey('${name}')">Test</button>
+              </div>
+              <div class="test-result" id="test-${name}"></div>
+            ` : ''}
+            <button class="btn-save-key" onclick="saveBackend('${name}')">Save</button>
+          </div>
+        `;
+        list.appendChild(section);
+      }
+    }
+
+    function toggleSection(header) {
+      const body = header.nextElementSibling;
+      body.classList.toggle('open');
+    }
+
+    function toggleEnabled(el) {
+      el.classList.toggle('on');
+    }
+
+    async function testKey(name) {
+      const key = document.getElementById(`key-${name}`).value;
+      const testEl = document.getElementById(`test-${name}`);
+      testEl.className = 'test-result';
+      testEl.textContent = 'Testing...';
+      testEl.style.display = 'block';
+
+      try {
+        const resp = await fetch('/api/settings/test', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ backend: name, api_key: key }),
+        });
+        const result = await resp.json();
+        if (result.ok) {
+          testEl.className = 'test-result pass';
+          testEl.textContent = result.message || 'Connection successful!';
+        } else {
+          testEl.className = 'test-result fail';
+          testEl.textContent = result.error || 'Connection failed';
+        }
+      } catch (e) {
+        testEl.className = 'test-result fail';
+        testEl.textContent = `Error: ${e.message}`;
+      }
+    }
+
+    async function saveBackend(name) {
+      const info = BACKEND_INFO[name];
+      const data = {
+        backend: name,
+        enabled: document.querySelector(`.toggle[data-backend="${name}"]`).classList.contains('on'),
+      };
+      if (info.needsKey) {
+        data.api_key = document.getElementById(`key-${name}`).value;
+      }
+      if (info.needsUrl) {
+        data.url = document.getElementById(`url-${name}`).value;
+      }
+
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data),
+      });
+
+      const msg = document.getElementById('saved-msg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2000);
+
+      // Reload config
+      await init();
+    }
+
+    init();
+  </script>
+</body>
+</html>

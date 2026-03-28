@@ -64,9 +64,19 @@ function initWebSocket() {
 
 function startPolling(jobId) {
   if (state.pollTimer) clearInterval(state.pollTimer);
+  let notFoundCount = 0;
   state.pollTimer = setInterval(async () => {
     try {
       const resp = await fetch(`/api/job/${jobId}`);
+      if (resp.status === 404) {
+        notFoundCount++;
+        if (notFoundCount > 5) {
+          clearInterval(state.pollTimer);
+          state.pollTimer = null;
+          handleJobUpdate({ job_id: jobId, type: 'job_update', status: 'error', error: 'Job lost (server may have restarted)' });
+        }
+        return;
+      }
       const data = await resp.json();
       handleJobUpdate({ ...data, job_id: jobId, type: 'job_update' });
       if (data.status === 'complete' || data.status === 'error') {

@@ -77,8 +77,16 @@ backends:
     enabled: false
     api_key: ""  # or set GEMINI_API_KEY env var
     models:
-      - id: "gemini-2.0-flash-exp-image-generation"
-        label: "Gemini 2.0 Flash Image Gen"
+      - id: "gemini-2.5-flash-image"
+        label: "Nano Banana (Gemini 2.5 Flash)"
+      - id: "gemini-3-pro-image-preview"
+        label: "Nano Banana Pro (Gemini 3 Pro)"
+      - id: "gemini-3.1-flash-image-preview"
+        label: "Nano Banana 2 (Gemini 3.1 Flash)"
+      - id: "imagen-4.0-fast-generate-001"
+        label: "Imagen 4 Fast"
+      - id: "imagen-4.0-generate-001"
+        label: "Imagen 4"
 
   stability:
     enabled: false

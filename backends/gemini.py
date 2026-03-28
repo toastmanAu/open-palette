@@ -1,4 +1,4 @@
-"""Google Gemini image generation backend."""
+"""Google Gemini / Imagen image generation backend."""
 
 import base64
 import json
@@ -8,6 +8,9 @@ import aiohttp
 
 from backends.base import BaseBackend
 
+# Imagen models use the predict endpoint, Gemini models use generateContent
+IMAGEN_MODELS = {"imagen-4.0-generate-001", "imagen-4.0-ultra-generate-001", "imagen-4.0-fast-generate-001"}
+
 
 class GeminiBackend(BaseBackend):
     async def generate(self, params, output_path, on_progress):
@@ -15,14 +18,21 @@ class GeminiBackend(BaseBackend):
         if not api_key:
             raise RuntimeError("Gemini API key not configured (set GEMINI_API_KEY or config)")
 
-        model = params.get("model", "gemini-2.0-flash-exp-image-generation")
+        model = params.get("model", "gemini-2.5-flash-image")
         prompt = params["prompt"]
 
-        await on_progress(10, "Sending to Gemini...")
+        if model in IMAGEN_MODELS:
+            await self._generate_imagen(api_key, model, params, output_path, on_progress)
+        else:
+            await self._generate_gemini(api_key, model, params, output_path, on_progress)
+
+    async def _generate_gemini(self, api_key, model, params, output_path, on_progress):
+        """Gemini multimodal models (Nano Banana etc) — generateContent with IMAGE modality."""
+        prompt = params["prompt"]
+        await on_progress(10, f"Sending to {model}...")
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
 
-        # Build request with optional reference images
         parts = []
         ref_images = params.get("reference_images", [])
         for ref_path in ref_images[:4]:
@@ -31,14 +41,18 @@ class GeminiBackend(BaseBackend):
             parts.append({
                 "inline_data": {"mime_type": "image/png", "data": img_data}
             })
-        parts.append({"text": prompt})
+
+        if ref_images:
+            parts.append({"text": f"Generate an image based on these reference images: {prompt}"})
+        else:
+            parts.append({"text": f"Generate an image: {prompt}"})
 
         payload = {
             "contents": [{"parts": parts}],
             "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]},
         }
 
-        await on_progress(30, "Waiting for Gemini response...")
+        await on_progress(30, "Waiting for response...")
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=120)) as resp:
@@ -49,7 +63,6 @@ class GeminiBackend(BaseBackend):
 
         await on_progress(80, "Processing response...")
 
-        # Extract image from response
         for candidate in result.get("candidates", []):
             for part in candidate.get("content", {}).get("parts", []):
                 if "inlineData" in part:
@@ -59,4 +72,39 @@ class GeminiBackend(BaseBackend):
                     await on_progress(100, "Done")
                     return
 
-        raise RuntimeError("No image in Gemini response")
+        raise RuntimeError("No image in Gemini response — model may have refused the prompt")
+
+    async def _generate_imagen(self, api_key, model, params, output_path, on_progress):
+        """Imagen models — dedicated image generation endpoint."""
+        prompt = params["prompt"]
+        await on_progress(10, f"Sending to {model}...")
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:predict?key={api_key}"
+
+        payload = {
+            "instances": [{"prompt": prompt}],
+            "parameters": {
+                "sampleCount": 1,
+            },
+        }
+
+        await on_progress(30, "Generating...")
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=120)) as resp:
+                if resp.status != 200:
+                    text = await resp.text()
+                    raise RuntimeError(f"Imagen error: {text[:500]}")
+                result = await resp.json()
+
+        await on_progress(80, "Processing...")
+
+        predictions = result.get("predictions", [])
+        if predictions and "bytesBase64Encoded" in predictions[0]:
+            img_b64 = predictions[0]["bytesBase64Encoded"]
+            with open(output_path, "wb") as f:
+                f.write(base64.b64decode(img_b64))
+            await on_progress(100, "Done")
+            return
+
+        raise RuntimeError("No image in Imagen response")

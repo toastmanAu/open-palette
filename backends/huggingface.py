@@ -9,7 +9,7 @@ from backends.base import BaseBackend
 
 class HuggingFaceBackend(BaseBackend):
     async def generate(self, params, output_path, on_progress):
-        api_key = self.api_key or os.environ.get("HF_TOKEN", "")
+        api_key = self.api_key or os.environ.get("HF_TOKEN", "") or os.environ.get("HUGGINGFACE_API_KEY", "")
         headers = {}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"

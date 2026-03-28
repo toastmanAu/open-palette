@@ -42,13 +42,36 @@ async function loadGallery() {
 }
 
 function initWebSocket() {
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  state.ws = new WebSocket(`${proto}//${location.host}/ws`);
-  state.ws.onmessage = (e) => {
-    const msg = JSON.parse(e.data);
-    if (msg.type === 'job_update') handleJobUpdate(msg);
-  };
-  state.ws.onclose = () => setTimeout(initWebSocket, 3000);
+  try {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    state.ws = new WebSocket(`${proto}//${location.host}/ws`);
+    state.ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'job_update') handleJobUpdate(msg);
+    };
+    state.ws.onclose = () => setTimeout(initWebSocket, 3000);
+    state.ws.onerror = () => {
+      console.log('WebSocket unavailable, using polling fallback');
+      state.ws = null;
+    };
+  } catch (e) {
+    state.ws = null;
+  }
+}
+
+function startPolling(jobId) {
+  if (state.pollTimer) clearInterval(state.pollTimer);
+  state.pollTimer = setInterval(async () => {
+    try {
+      const resp = await fetch(`/api/job/${jobId}`);
+      const data = await resp.json();
+      handleJobUpdate({ ...data, job_id: jobId, type: 'job_update' });
+      if (data.status === 'complete' || data.status === 'error') {
+        clearInterval(state.pollTimer);
+        state.pollTimer = null;
+      }
+    } catch (e) { /* retry next interval */ }
+  }, 1000);
 }
 
 // --- Backend selection ---
@@ -83,10 +106,26 @@ function selectBackend(name) {
   if (models.length === 0) {
     modelSelect.innerHTML = '<option value="">Default</option>';
   } else {
-    models.forEach(m => {
+    // Sort: available first, then unavailable
+    const sorted = [...models].sort((a, b) => {
+      const aAvail = typeof a === 'string' || a.available !== false;
+      const bAvail = typeof b === 'string' || b.available !== false;
+      if (aAvail && !bAvail) return -1;
+      if (!aAvail && bAvail) return 1;
+      return 0;
+    });
+    sorted.forEach(m => {
       const opt = document.createElement('option');
-      opt.value = typeof m === 'string' ? m : m.id;
-      opt.textContent = typeof m === 'string' ? m : m.label;
+      const id = typeof m === 'string' ? m : m.id;
+      const label = typeof m === 'string' ? m : m.label;
+      const available = typeof m === 'string' || m.available !== false;
+      const discovered = typeof m === 'object' && m.discovered;
+      opt.value = id;
+      opt.textContent = available
+        ? (discovered ? `${label}  [auto-detected]` : label)
+        : `${label}  [not installed]`;
+      opt.disabled = !available;
+      if (!available) opt.style.color = '#555';
       modelSelect.appendChild(opt);
     });
   }
@@ -100,8 +139,11 @@ function selectBackend(name) {
   if (name === 'comfyui' && info.model_categories?.ip_adapters) {
     info.model_categories.ip_adapters.forEach(m => {
       const opt = document.createElement('option');
+      const available = m.available !== false;
       opt.value = m.id;
-      opt.textContent = m.label;
+      opt.textContent = available ? m.label : `${m.label}  [not installed]`;
+      opt.disabled = !available;
+      if (!available) opt.style.color = '#555';
       ipSelect.appendChild(opt);
     });
   }
@@ -112,8 +154,11 @@ function selectBackend(name) {
   if (name === 'comfyui' && info.model_categories?.upscalers) {
     info.model_categories.upscalers.forEach(m => {
       const opt = document.createElement('option');
+      const available = m.available !== false;
       opt.value = m.id;
-      opt.textContent = m.label;
+      opt.textContent = available ? m.label : `${m.label}  [not installed]`;
+      opt.disabled = !available;
+      if (!available) opt.style.color = '#555';
       upSelect.appendChild(opt);
     });
   }
@@ -255,6 +300,8 @@ async function generate() {
 
     state.currentJobId = data.job_id;
     showProgress(0, 'Queued...');
+    // Always start polling as fallback (works even if WS is up)
+    startPolling(data.job_id);
   } catch (e) {
     toast(`Generation failed: ${e.message}`, 'error');
     btn.disabled = false;

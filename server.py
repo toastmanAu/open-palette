@@ -62,18 +62,89 @@ async def index():
 
 @app.get("/api/backends")
 async def get_backends():
-    """Return all configured backends and their models."""
+    """Return all configured backends with live model discovery."""
     result = {}
     for name, backend_cfg in config.get("backends", {}).items():
-        if not backend_cfg.get("enabled", False):
-            continue
-        info = {"models": backend_cfg.get("models", []), "type": _backend_type(name)}
-        # For comfyui, flatten model categories
+        enabled = backend_cfg.get("enabled", False)
+        info = {"models": backend_cfg.get("models", []), "type": _backend_type(name), "enabled": enabled}
+
         if name == "comfyui" and isinstance(info["models"], dict):
             info["model_categories"] = info["models"]
             info["models"] = info["models"].get("checkpoints", [])
+
+        # Probe ComfyUI for actually-installed models
+        if name == "comfyui":
+            live = await _probe_comfyui(backend_cfg.get("url", ""))
+            if live:
+                info["enabled"] = True
+                info["live_models"] = live
+                # Mark each configured model as available or not
+                for m in info["models"]:
+                    mid = m["id"] if isinstance(m, dict) else m
+                    if isinstance(m, dict):
+                        m["available"] = mid in live.get("checkpoints", [])
+                    # Add discovered models not in config
+                for discovered in live.get("checkpoints", []):
+                    if not any((m["id"] if isinstance(m, dict) else m) == discovered for m in info["models"]):
+                        info["models"].append({"id": discovered, "label": discovered.replace(".safetensors", "").replace(".gguf", ""), "available": True, "discovered": True})
+                # Same for ip_adapters, upscalers, clip_vision
+                if "model_categories" in info:
+                    for cat in ("ip_adapters", "upscalers"):
+                        live_cat = live.get(cat, [])
+                        for m in info["model_categories"].get(cat, []):
+                            m["available"] = m["id"] in live_cat
+                        for discovered in live_cat:
+                            existing = info["model_categories"].get(cat, [])
+                            if not any(m["id"] == discovered for m in existing):
+                                existing.append({"id": discovered, "label": discovered.rsplit(".", 1)[0], "available": True, "discovered": True})
+                # Add GGUF unets as checkpoints too
+                for unet in live.get("unets", []):
+                    if not any((m["id"] if isinstance(m, dict) else m) == unet for m in info["models"]):
+                        info["models"].append({"id": unet, "label": unet.replace(".gguf", " (GGUF)").replace(".safetensors", ""), "available": True, "discovered": True, "format": "gguf" if unet.endswith(".gguf") else "safetensors"})
+
         result[name] = info
     return result
+
+
+async def _probe_comfyui(url: str) -> dict | None:
+    """Query ComfyUI for installed models."""
+    if not url:
+        return None
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.get(f"{url.rstrip('/')}/object_info")
+            if resp.status_code != 200:
+                return None
+            data = resp.json()
+            result = {}
+            # Checkpoints
+            ckpt = data.get("CheckpointLoaderSimple", {}).get("input", {}).get("required", {}).get("ckpt_name", [])
+            if ckpt and isinstance(ckpt[0], list):
+                result["checkpoints"] = ckpt[0]
+            # UNets (for GGUF)
+            unet = data.get("UNETLoader", {}).get("input", {}).get("required", {}).get("unet_name", [])
+            if unet and isinstance(unet[0], list):
+                result["unets"] = unet[0]
+            # GGUF UNet loader
+            gguf_unet = data.get("UnetLoaderGGUF", {}).get("input", {}).get("required", {}).get("unet_name", [])
+            if gguf_unet and isinstance(gguf_unet[0], list):
+                result["unets"] = list(set(result.get("unets", []) + gguf_unet[0]))
+            # IP-Adapters
+            ipa = data.get("IPAdapterModelLoader", {}).get("input", {}).get("required", {}).get("ipadapter_file", [])
+            if ipa and isinstance(ipa[0], list):
+                result["ip_adapters"] = ipa[0]
+            # Upscalers
+            up = data.get("UpscaleModelLoader", {}).get("input", {}).get("required", {}).get("model_name", [])
+            if up and isinstance(up[0], list):
+                result["upscalers"] = up[0]
+            # CLIP vision
+            clip_v = data.get("CLIPVisionLoader", {}).get("input", {}).get("required", {}).get("clip_name", [])
+            if clip_v and isinstance(clip_v[0], list):
+                result["clip_vision"] = clip_v[0]
+            return result
+    except Exception:
+        return None
 
 
 @app.get("/api/gallery")
@@ -199,11 +270,34 @@ async def _run_job(job_id: str, params: dict):
 
         await backend.generate(params, str(output_path), on_progress)
 
-        # Save metadata alongside image
+        # Save metadata alongside image + embed in PNG
         meta = {**params, "job_id": job_id, "created": datetime.now().isoformat()}
-        meta.pop("reference_images", None)  # don't store temp paths
+        ref_count = len(meta.pop("reference_images", []))
+        meta["reference_image_count"] = ref_count
         async with aiofiles.open(output_path.with_suffix(".json"), "w") as f:
             await f.write(json.dumps(meta, indent=2))
+
+        # Embed metadata in PNG tEXt chunks (survives file sharing)
+        try:
+            from PIL import Image
+            from PIL.PngImagePlugin import PngInfo
+            img = Image.open(output_path)
+            png_meta = PngInfo()
+            png_meta.add_text("prompt", meta["prompt"])
+            if meta.get("negative_prompt"):
+                png_meta.add_text("negative_prompt", meta["negative_prompt"])
+            png_meta.add_text("backend", meta.get("backend", ""))
+            png_meta.add_text("model", meta.get("model", ""))
+            png_meta.add_text("steps", str(meta.get("steps", "")))
+            png_meta.add_text("cfg_scale", str(meta.get("cfg_scale", "")))
+            png_meta.add_text("seed", str(meta.get("seed", "")))
+            png_meta.add_text("size", f"{meta.get('width', '')}x{meta.get('height', '')}")
+            if ref_count > 0:
+                png_meta.add_text("reference_images", str(ref_count))
+            png_meta.add_text("generator", "Open Palette")
+            img.save(output_path, pnginfo=png_meta)
+        except Exception:
+            pass  # metadata embedding is best-effort
 
         jobs[job_id].update({
             "status": "complete",

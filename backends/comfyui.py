@@ -55,11 +55,37 @@ class ComfyUIBackend(BaseBackend):
         ws_url = url.replace("http", "ws") + "/ws"
         client_id = str(uuid.uuid4())
 
+        model_name = params.get("model", "")
+        is_gguf = model_name.endswith(".gguf")
+
         workflow = json.loads(json.dumps(BASIC_TXT2IMG))
 
-        # Apply params
-        if params.get("model"):
-            workflow["4"]["inputs"]["ckpt_name"] = params["model"]
+        if is_gguf:
+            # GGUF models use separate UNet + CLIP + VAE loaders
+            workflow["4"] = {
+                "class_type": "UnetLoaderGGUF",
+                "inputs": {"unet_name": model_name},
+            }
+            workflow["14"] = {
+                "class_type": "DualCLIPLoader",
+                "inputs": {
+                    "clip_name1": "clip_l.safetensors",
+                    "clip_name2": "clip_g.safetensors",
+                    "type": "sdxl",
+                },
+            }
+            workflow["15"] = {
+                "class_type": "VAELoader",
+                "inputs": {"vae_name": "sdxl_vae.safetensors"},
+            }
+            # Rewire: KSampler model from GGUF UNet, CLIP from DualCLIPLoader, VAE from VAELoader
+            workflow["3"]["inputs"]["model"] = ["4", 0]
+            workflow["6"]["inputs"]["clip"] = ["14", 0]
+            workflow["7"]["inputs"]["clip"] = ["14", 0]
+            workflow["8"]["inputs"]["vae"] = ["15", 0]
+        elif model_name:
+            workflow["4"]["inputs"]["ckpt_name"] = model_name
+
         workflow["5"]["inputs"]["width"] = params.get("width", 1024)
         workflow["5"]["inputs"]["height"] = params.get("height", 1024)
         workflow["6"]["inputs"]["text"] = params["prompt"]

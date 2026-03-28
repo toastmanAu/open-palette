@@ -492,7 +492,7 @@ async def _run_job(job_id: str, params: dict):
 
 
 def _backend_type(name: str) -> str:
-    local = {"comfyui", "fooocus", "a1111", "ollama"}
+    local = {"comfyui", "fooocus", "a1111"}
     free = {"pollinations", "huggingface"}
     if name in local:
         return "local"

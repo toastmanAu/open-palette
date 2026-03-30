@@ -1,0 +1,76 @@
+# Open Palette — Docker Compose
+#
+# Quick start:
+#   docker compose up -d
+#   Open http://localhost:7860
+#
+# With Ollama (enables "OP my prompt"):
+#   docker compose --profile ollama up -d
+#
+# With GPU for Ollama:
+#   docker compose --profile ollama-gpu up -d
+#
+# First time with Ollama — pull a model:
+#   docker compose exec ollama ollama pull qwen2.5:14b
+
+services:
+  open-palette:
+    build: .
+    container_name: open-palette
+    ports:
+      - "7860:7860"
+    volumes:
+      # Persist generated images, scores DB, and config
+      - ./config.yaml:/app/config.yaml
+      - op-outputs:/app/outputs
+      - op-data:/app/data
+      - op-uploads:/app/uploads
+    environment:
+      # Pass through any API keys from host env
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - STABILITY_API_KEY=${STABILITY_API_KEY:-}
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+    restart: unless-stopped
+    # Allow reaching ComfyUI and other services on host network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # --- Ollama (CPU only) ---
+  # Activate with: docker compose --profile ollama up -d
+  ollama:
+    image: ollama/ollama:latest
+    container_name: open-palette-ollama
+    profiles: ["ollama", "ollama-gpu"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  # --- Ollama with GPU passthrough ---
+  # Activate with: docker compose --profile ollama-gpu up -d
+  # Requires: nvidia-container-toolkit installed on host
+  ollama-gpu:
+    image: ollama/ollama:latest
+    container_name: open-palette-ollama-gpu
+    profiles: ["ollama-gpu"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  op-outputs:
+  op-data:
+  op-uploads:
+  ollama-models:

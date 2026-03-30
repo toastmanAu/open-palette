@@ -6,7 +6,8 @@
 # Pull a model: ollama pull qwen2.5:14b
 prompt_optimizer:
   enabled: false
-  ollama_url: "http://[::1]:11434"  # IPv6 localhost — change if Ollama is remote
+  ollama_url: "http://[::1]:11434"  # Native install (IPv6 localhost)
+  # ollama_url: "http://ollama:11434"  # Docker Compose (use service name)
   model: "qwen2.5:14b"             # Any Ollama model works — configure in Settings
 
 server:

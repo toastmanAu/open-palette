@@ -128,9 +128,36 @@ Click the **Scores** button on any generated image or compare card to see its me
 
 ## Quick Start
 
+### Option A: Docker (recommended)
+
 ```bash
 git clone https://github.com/toastmanAu/open-palette.git
 cd open-palette
+cp config.example.yaml config.yaml
+
+# Basic — just Open Palette
+docker compose up -d
+
+# With Ollama for "OP my prompt" (CPU)
+docker compose --profile ollama up -d
+docker compose exec ollama ollama pull qwen2.5:14b
+```
+
+Open **http://localhost:7860** in your browser.
+
+> **Docker + ComfyUI:** If ComfyUI runs on your host machine, use `http://host.docker.internal:8188` as the ComfyUI URL in config.yaml. If it's on another machine, use its IP directly.
+
+### Option B: Native install
+
+```bash
+git clone https://github.com/toastmanAu/open-palette.git
+cd open-palette
+./install.sh     # checks prerequisites, creates venv, installs deps, sets up config
+```
+
+Or manually:
+
+```bash
 pip install -r requirements.txt
 cp config.example.yaml config.yaml
 python server.py
@@ -144,7 +171,7 @@ Open **http://localhost:7860** in your browser.
 
 1. Get a free API key from [Google AI Studio](https://aistudio.google.com/apikey)
 2. Set it: `export GEMINI_API_KEY=your_key_here`
-3. Run `python server.py` and select **gemini** backend
+3. Run `python server.py` (or add to config.yaml and restart the container)
 
 **Have an NVIDIA GPU?** Set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) and point Open Palette at it in `config.yaml`. Download GGUF quantized models to run SDXL-quality generation on 8GB VRAM.
 

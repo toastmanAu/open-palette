@@ -111,6 +111,10 @@
             <select id="music-model"></select>
           </div>
           <div class="ctrl-group">
+            <label>Mode</label>
+            <select id="music-mode"></select>
+          </div>
+          <div class="ctrl-group">
             <label>Duration</label>
             <div class="dur-row">
               <input type="range" id="music-duration" min="5" max="30" step="1" value="15">
@@ -118,6 +122,7 @@
             </div>
           </div>
         </div>
+        <div id="mode-desc" style="font-size:11px;color:var(--text-dim);margin-top:-8px;margin-bottom:12px"></div>
 
         <div class="actions">
           <button class="btn-gen" id="btn-gen" onclick="generateMusic()">Generate Track</button>
@@ -125,7 +130,7 @@
 
         <div id="generating" class="generating-msg" style="display:none">
           <span class="spinner"></span>
-          Generating music... This takes 30-90 seconds on CPU.
+          <span id="gen-msg">Generating music... This takes 30-90 seconds on CPU.</span>
         </div>
 
         <div class="result" id="result">
@@ -160,15 +165,45 @@
       }
 
       document.getElementById('generator').style.display = 'block';
-      const select = document.getElementById('music-model');
+
+      const modelSelect = document.getElementById('music-model');
       data.models.forEach(m => {
         const opt = document.createElement('option');
         opt.value = m.id;
         opt.textContent = `${m.name} (${m.params})`;
-        select.appendChild(opt);
+        modelSelect.appendChild(opt);
       });
+
+      const modeSelect = document.getElementById('music-mode');
+      (data.modes || []).forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        opt.dataset.desc = m.desc;
+        modeSelect.appendChild(opt);
+      });
+      updateModeInfo();
     }
 
+    function updateModeInfo() {
+      const modeSelect = document.getElementById('music-mode');
+      const selected = modeSelect.options[modeSelect.selectedIndex];
+      const desc = selected ? selected.dataset.desc || '' : '';
+      document.getElementById('mode-desc').textContent = desc;
+
+      // Update duration slider max based on mode
+      const slider = document.getElementById('music-duration');
+      const mode = modeSelect.value;
+      if (mode === 'continuation' || mode === 'loop') {
+        slider.max = 180;
+      } else {
+        slider.max = 30;
+        if (parseInt(slider.value) > 30) slider.value = 30;
+      }
+      document.getElementById('dur-val').textContent = slider.value + 's';
+    }
+
+    document.getElementById('music-mode').addEventListener('change', updateModeInfo);
     document.getElementById('music-duration').addEventListener('input', (e) => {
       document.getElementById('dur-val').textContent = e.target.value + 's';
     });
@@ -179,6 +214,11 @@
 
       const btn = document.getElementById('btn-gen');
       btn.disabled = true;
+      const dur = parseInt(document.getElementById('music-duration').value);
+      const mode = document.getElementById('music-mode').value;
+      let timeEst = dur <= 30 ? '30-90 seconds' : `${Math.ceil(dur / 30)}-${Math.ceil(dur / 30) * 2} minutes`;
+      document.getElementById('gen-msg').textContent =
+        `Generating ${dur}s ${mode} track... Estimated: ${timeEst} on CPU.`;
       document.getElementById('generating').style.display = 'block';
       document.getElementById('result').classList.remove('active');
 
@@ -189,6 +229,7 @@
           body: JSON.stringify({
             prompt,
             model: document.getElementById('music-model').value,
+            mode: document.getElementById('music-mode').value,
             duration: parseInt(document.getElementById('music-duration').value),
           }),
         });

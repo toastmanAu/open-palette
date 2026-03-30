@@ -871,7 +871,7 @@ async def music_status():
     """Check if music generation is available."""
     engine = _get_music_engine()
     if engine:
-        return {"available": True, "models": engine.models()}
+        return {"available": True, "models": engine.models(), "modes": engine.modes()}
     return {"available": False, "reason": "audiocraft not installed (pip install audiocraft)"}
 
 
@@ -884,7 +884,9 @@ async def music_generate(request: Request):
 
     data = await request.json()
     prompt = data.get("prompt", "").strip()
-    duration = min(float(data.get("duration", 15)), 30)
+    mode = data.get("mode", "single")
+    max_dur = 180 if mode in ("continuation", "loop") else 30
+    duration = min(float(data.get("duration", 15)), max_dur)
     model_id = data.get("model", "")
 
     if not prompt:
@@ -895,7 +897,8 @@ async def music_generate(request: Request):
     output_path = str(store.asset_path(job_id, "audio", ".wav"))
 
     async def _do():
-        return await engine.generate(prompt, output_path, duration, model_id or None)
+        return await engine.generate(prompt, output_path, duration,
+                                     model_id or None, mode=mode)
 
     try:
         meta = await job_queue.submit(_do(), lane="cpu", job_id=f"music-{job_id}")

@@ -105,7 +105,7 @@ class MusicGenEngine:
         prev_wav = None
 
         while remaining > 0:
-            chunk_dur = min(self.CHUNK_DURATION, remaining + self.OVERLAP)
+            chunk_dur = min(self.CHUNK_DURATION, remaining)
             model.set_generation_params(duration=chunk_dur)
 
             with torch.no_grad():
@@ -123,14 +123,22 @@ class MusicGenEngine:
             audio_chunk = self._wav_to_numpy(wav[0])
 
             if chunks:
-                # Crossfade with previous chunk
-                audio_chunk = self._crossfade(chunks[-1], audio_chunk,
-                                              self.OVERLAP, sample_rate)
-                chunks[-1] = audio_chunk
+                # Crossfade: merge tail of previous with head of new
+                overlap_samples = int(self.OVERLAP * sample_rate)
+                overlap_samples = min(overlap_samples, len(chunks[-1]), len(audio_chunk))
+                fade_out = np.linspace(1, 0, overlap_samples)
+                fade_in = np.linspace(0, 1, overlap_samples)
+                # Trim overlap from previous chunk's tail, blend, then append rest of new chunk
+                prev_tail = chunks[-1][-overlap_samples:] * fade_out
+                new_head = audio_chunk[:overlap_samples] * fade_in
+                mixed = prev_tail + new_head
+                chunks[-1] = chunks[-1][:-overlap_samples]  # trim tail
+                chunks.append(mixed)
+                chunks.append(audio_chunk[overlap_samples:])  # rest of new chunk
             else:
                 chunks.append(audio_chunk)
 
-            remaining -= (self.CHUNK_DURATION - self.OVERLAP)
+            remaining -= chunk_dur
 
         full_audio = np.concatenate(chunks) if len(chunks) > 1 else chunks[0]
         # Trim to exact requested duration

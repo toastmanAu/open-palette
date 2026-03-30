@@ -1,13 +1,13 @@
-# Open Palette Video Studio — Roadmap
+# Wyltek Studio Video Studio — Roadmap
 
 ## Vision
 
-Extend Open Palette from an image generation tool into a full local-first creative studio. Generate images, compose them into videos with transitions, text overlays, AI narration, and music — all from one interface, all running locally.
+Extend Wyltek Studio from an image generation tool into a full local-first creative studio. Generate images, compose them into videos with transitions, text overlays, AI narration, and music — all from one interface, all running locally.
 
 ## Architecture
 
 ```
-Open Palette (existing)
+Wyltek Studio (existing)
   └─ /studio (new page)
        ├─ Timeline editor (drag images, audio, text onto tracks)
        ├─ TTS engine selector (Piper, Kokoro, XTTS, Bark, F5-TTS)
@@ -53,7 +53,7 @@ Strategy: Install Piper first (instant, lightweight), add others as optional bac
 **Dependencies:** None beyond what's installed. Piper is a standalone binary.
 
 ### Phase 2: Image-to-Video Compositor
-**Goal:** Arrange Open Palette images on a timeline, add transitions, export video.
+**Goal:** Arrange Wyltek Studio images on a timeline, add transitions, export video.
 
 **New page:** `/studio/video`
 
@@ -111,7 +111,7 @@ Strategy: Install Piper first (instant, lightweight), add others as optional bac
 **Goal:** Animate between images, generate video sequences.
 
 - [ ] AnimateDiff / SVD (Stable Video Diffusion) integration via ComfyUI
-- [ ] Image-to-video: animate a single Open Palette image (2-4s clips)
+- [ ] Image-to-video: animate a single Wyltek Studio image (2-4s clips)
 - [ ] Interpolation: generate transition frames between two images
 - [ ] Deforum-style camera movements
 - [ ] Requires GPU upgrade (16GB+ VRAM recommended)

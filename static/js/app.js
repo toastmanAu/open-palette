@@ -1,5 +1,5 @@
 /**
- * Open Palette — frontend application
+ * Wyltek Studio — frontend application
  */
 
 const state = {
@@ -162,9 +162,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
   // Check for images sent from Projects page
-  const refData = sessionStorage.getItem('op-ref-images');
+  const refData = sessionStorage.getItem('ws-ref-images');
   if (refData) {
-    sessionStorage.removeItem('op-ref-images');
+    sessionStorage.removeItem('ws-ref-images');
     try {
       const refs = JSON.parse(refData);
       refs.forEach(async (ref, i) => {

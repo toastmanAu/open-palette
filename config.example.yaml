@@ -1,4 +1,4 @@
-# Open Palette Configuration
+# Wyltek Studio Configuration
 # Copy to config.yaml and edit to match your setup
 
 # Prompt Optimizer — uses local Ollama LLM to enhance prompts (runs on CPU)

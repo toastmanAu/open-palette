@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Open Palette — File Manager</title>
+  <title>Wyltek Studio — File Manager</title>
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/nav.css">
   <script src="/static/js/nav.js"></script>
@@ -484,7 +484,7 @@
         .filter(a => state.selected.has(a.filename) && a.type === 'image')
         .slice(0, 4);
       if (images.length === 0) { toast('Select some images first'); return; }
-      sessionStorage.setItem('op-ref-images', JSON.stringify(
+      sessionStorage.setItem('ws-ref-images', JSON.stringify(
         images.map(img => ({ url: img.url, filename: img.filename }))
       ));
       toast(`Sending ${images.length} image(s) to Generator...`);

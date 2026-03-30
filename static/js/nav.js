@@ -27,7 +27,7 @@
   sidebar.id = 'sidebar-nav';
 
   // Restore collapsed state
-  if (localStorage.getItem('op-nav-collapsed') === '1') {
+  if (localStorage.getItem('ws-nav-collapsed') === '1') {
     sidebar.classList.add('collapsed');
   }
 
@@ -46,8 +46,8 @@
 
   sidebar.innerHTML = `
     <div class="sidebar-brand">
-      <div class="brand-icon">OP</div>
-      <span class="brand-text">Open Palette</span>
+      <div class="brand-icon">W</div>
+      <span class="brand-text">Wyltek Studio</span>
     </div>
     <div class="sidebar-links">${linksHtml}</div>
     <div class="sidebar-footer">
@@ -63,7 +63,7 @@
   mobileHeader.className = 'mobile-header';
   mobileHeader.innerHTML = `
     <button class="hamburger" onclick="window._openMobileNav()">&#9776;</button>
-    <span class="mobile-title">Open Palette</span>
+    <span class="mobile-title">Wyltek Studio</span>
   `;
 
   // Mobile overlay
@@ -98,7 +98,7 @@
   window._toggleNav = function() {
     const nav = document.getElementById('sidebar-nav');
     nav.classList.toggle('collapsed');
-    localStorage.setItem('op-nav-collapsed', nav.classList.contains('collapsed') ? '1' : '0');
+    localStorage.setItem('ws-nav-collapsed', nav.classList.contains('collapsed') ? '1' : '0');
   };
 
   // Mobile open/close

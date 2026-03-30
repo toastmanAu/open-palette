@@ -161,7 +161,7 @@ BASIC_TXT2IMG = {
     },
     "9": {
         "class_type": "SaveImage",
-        "inputs": {"filename_prefix": "open-palette", "images": ["8", 0]},
+        "inputs": {"filename_prefix": "wyltek-studio", "images": ["8", 0]},
     },
 }
 

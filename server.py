@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Open Palette — local-first AI image generation studio."""
+"""Wyltek Studio — local-first AI creative studio."""
 
 import asyncio
 import json
@@ -56,7 +56,7 @@ async def lifespan(app):
     yield
 
 
-app = FastAPI(title="Open Palette", lifespan=lifespan)
+app = FastAPI(title="Wyltek Studio", lifespan=lifespan)
 
 
 # --- Static files & SPA ---
@@ -924,7 +924,7 @@ async def _run_job(job_id: str, params: dict):
             png_meta.add_text("size", f"{meta.get('width', '')}x{meta.get('height', '')}")
             if ref_count > 0:
                 png_meta.add_text("reference_images", str(ref_count))
-            png_meta.add_text("generator", "Open Palette")
+            png_meta.add_text("generator", "Wyltek Studio")
             img.save(output_path, pnginfo=png_meta)
         except Exception:
             pass  # metadata embedding is best-effort

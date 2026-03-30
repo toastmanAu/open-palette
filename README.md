@@ -1,6 +1,6 @@
-# Open Palette
+# Wyltek Studio
 
-Local-first AI image generation studio. Like OpenArt, but you own the stack.
+Local-first AI creative studio by [Wyltek Industries](https://github.com/toastmanAu). Generate images, enhance prompts with AI, create narration, and build video content — all running locally on your hardware.
 
 Upload reference images, describe what you want, pick your model and backend, and generate. Compare outputs across multiple backends side-by-side. Swap between local GPU inference and cloud APIs with one click.
 
@@ -8,7 +8,7 @@ Upload reference images, describe what you want, pick your model and backend, an
 
 ## Model Comparison
 
-Same prompt across different backends — all generated through Open Palette:
+Same prompt across different backends — all generated through Wyltek Studio:
 
 > *"a golden retriever sitting in autumn leaves, warm sunlight, shallow depth of field, photorealistic"*
 
@@ -64,7 +64,7 @@ All local images generated on an RTX 3060 Ti (8GB VRAM) using GGUF quantized mod
 
 ### Why Per-Model Defaults Matter
 
-Open Palette applies optimal generation settings (sampler, scheduler, CFG scale, steps, resolution) per model automatically. Without this, compare mode sends identical parameters to every model — which can produce dramatically bad results.
+Wyltek Studio applies optimal generation settings (sampler, scheduler, CFG scale, steps, resolution) per model automatically. Without this, compare mode sends identical parameters to every model — which can produce dramatically bad results.
 
 **The problem:** Flux, Lightning, Schnell, and DreamShaper all need radically different settings. Sending CFG 7.0 and 25 steps to a Flux model (which needs CFG 3.5) or a 4-step distilled model produces washed-out or over-processed images.
 
@@ -99,7 +99,7 @@ Open Palette applies optimal generation settings (sampler, scheduler, CFG scale,
 | **Scheduler** | Controls the noise schedule curve. `karras` is sharper for SDXL, `simple` for Flux, `sgm_uniform` for Lightning | Subtle quality loss, muddy details |
 | **Resolution** | Must match the model's training resolution. SD 1.5 = 512x512, SDXL/Flux = 1024x1024 | Repeated patterns, artifacts, blur (especially SD 1.5 at 1024x) |
 
-Open Palette handles all of this automatically — just pick your model and generate.
+Wyltek Studio handles all of this automatically — just pick your model and generate.
 
 ### "OP My Prompt" — AI-Enhanced Prompts
 
@@ -144,11 +144,11 @@ Click the **Scores** button on any generated image or compare card to see its me
 ### Option A: Docker (recommended)
 
 ```bash
-git clone https://github.com/toastmanAu/open-palette.git
-cd open-palette
+git clone https://github.com/toastmanAu/wyltek-studio.git
+cd wyltek-studio
 cp config.example.yaml config.yaml
 
-# Basic — just Open Palette
+# Basic — just Wyltek Studio
 docker compose up -d
 
 # With Ollama for "OP my prompt" (CPU)
@@ -163,8 +163,8 @@ Open **http://localhost:7860** in your browser.
 ### Option B: Native install
 
 ```bash
-git clone https://github.com/toastmanAu/open-palette.git
-cd open-palette
+git clone https://github.com/toastmanAu/wyltek-studio.git
+cd wyltek-studio
 ./install.sh     # checks prerequisites, creates venv, installs deps, sets up config
 ```
 
@@ -186,7 +186,7 @@ Open **http://localhost:7860** in your browser.
 2. Set it: `export GEMINI_API_KEY=your_key_here`
 3. Run `python server.py` (or add to config.yaml and restart the container)
 
-**Have an NVIDIA GPU?** Set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) and point Open Palette at it in `config.yaml`. Download GGUF quantized models to run SDXL-quality generation on 8GB VRAM.
+**Have an NVIDIA GPU?** Set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) and point Wyltek Studio at it in `config.yaml`. Download GGUF quantized models to run SDXL-quality generation on 8GB VRAM.
 
 ### Optional: Enable "OP My Prompt"
 
@@ -305,7 +305,7 @@ Select a LoRA from the Advanced Settings panel. Adjust strength to control how s
 
 **Cloud models:** Add model IDs to the relevant backend section in `config.yaml`. No file download needed.
 
-After adding models, restart ComfyUI (`systemctl --user restart comfyui`) and refresh Open Palette in the browser.
+After adding models, restart ComfyUI (`systemctl --user restart comfyui`) and refresh Wyltek Studio in the browser.
 
 ## Configuration
 
@@ -340,13 +340,13 @@ API keys can also be managed from the **Settings** page in the UI (`/settings`).
 ```bash
 # Create systemd user service
 mkdir -p ~/.config/systemd/user
-cat > ~/.config/systemd/user/open-palette.service << 'EOF'
+cat > ~/.config/systemd/user/wyltek-studio.service << 'EOF'
 [Unit]
-Description=Open Palette
+Description=Wyltek Studio
 After=network.target
 [Service]
 Type=simple
-WorkingDirectory=/path/to/open-palette
+WorkingDirectory=/path/to/wyltek-studio
 ExecStart=/usr/bin/python3 server.py
 Restart=always
 RestartSec=5
@@ -357,7 +357,7 @@ WantedBy=default.target
 EOF
 
 systemctl --user daemon-reload
-systemctl --user enable --now open-palette
+systemctl --user enable --now wyltek-studio
 ```
 
 Also run ComfyUI as a service for persistent local generation:
@@ -388,7 +388,7 @@ systemctl --user enable --now comfyui
 Browser (localhost:7860)
     |
     v
-Open Palette (FastAPI + WebSocket)
+Wyltek Studio (FastAPI + WebSocket)
     |
     +-- ComfyUI API (local GPU)
     |     +-- Checkpoints (SD 1.5, SDXL, Juggernaut, RealVis, DreamShaper)

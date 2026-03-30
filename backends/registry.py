@@ -29,7 +29,7 @@ def init_backends(backend_configs: dict):
             if backend:
                 _backends[name] = backend
         except Exception as e:
-            print(f"[open-palette] Failed to init backend '{name}': {e}")
+            print(f"[wyltek-studio] Failed to init backend '{name}': {e}")
 
 
 def _create_backend(name: str, cfg: dict):

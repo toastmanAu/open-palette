@@ -1,4 +1,4 @@
-# Open Palette — Docker Compose
+# Wyltek Studio — Docker Compose
 #
 # Quick start:
 #   docker compose up -d
@@ -14,9 +14,9 @@
 #   docker compose exec ollama ollama pull qwen2.5:14b
 
 services:
-  open-palette:
+  wyltek-studio:
     build: .
-    container_name: open-palette
+    container_name: wyltek-studio
     ports:
       - "7860:7860"
     volumes:
@@ -41,7 +41,7 @@ services:
   # Activate with: docker compose --profile ollama up -d
   ollama:
     image: ollama/ollama:latest
-    container_name: open-palette-ollama
+    container_name: wyltek-studio-ollama
     profiles: ["ollama", "ollama-gpu"]
     ports:
       - "11434:11434"
@@ -54,7 +54,7 @@ services:
   # Requires: nvidia-container-toolkit installed on host
   ollama-gpu:
     image: ollama/ollama:latest
-    container_name: open-palette-ollama-gpu
+    container_name: wyltek-studio-ollama-gpu
     profiles: ["ollama-gpu"]
     ports:
       - "11434:11434"

@@ -26,12 +26,12 @@ class PollinationsBackend(BaseBackend):
             "height": height,
             "model": model,
             "nologo": "true",
-            "referrer": "open-palette",
+            "referrer": "wyltek-studio",
         }
         if seed != -1:
             url_params["seed"] = seed
 
-        headers = {"Referer": "https://open-palette.local"}
+        headers = {"Referer": "https://wyltek-studio.local"}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 

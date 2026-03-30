@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Open Palette — Smart installer
+# Wyltek Studio — Smart installer
 # Checks prerequisites, installs dependencies, creates config, sets up systemd service.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/toastmanAu/open-palette/master/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/toastmanAu/wyltek-studio/master/install.sh | bash
 #   or: ./install.sh
 
 set -euo pipefail
@@ -24,14 +24,14 @@ INSTALL_DIR="${OPEN_PALETTE_DIR:-$(pwd)}"
 
 # --- Header ---
 echo -e "${BOLD}"
-echo "  ___                   ____       _      _   _       "
-echo " / _ \ _ __   ___ _ __ |  _ \ __ _| | ___| |_| |_ ___ "
-echo "| | | | '_ \ / _ \ '_ \| |_) / _\` | |/ _ \ __| __/ _ \\"
-echo "| |_| | |_) |  __/ | | |  __/ (_| | |  __/ |_| ||  __/"
-echo " \___/| .__/ \___|_| |_|_|   \__,_|_|\___|\__|\__\___|"
-echo "      |_|"
+echo " __        __    _ _       _      ____  _             _ _       "
+echo " \ \      / /   | | |_ ___| | __ / ___|| |_ _   _  __| (_) ___  "
+echo "  \ \ /\ / / | | | | __/ _ \ |/ / \___ \| __| | | |/ _\` | |/ _ \ "
+echo "   \ V  V /| |_| | | ||  __/   <   ___) | |_| |_| | (_| | | (_) |"
+echo "    \_/\_/  \__, |_|\__\___|_|\_\ |____/ \__|\__,_|\__,_|_|\___/ "
+echo "            |___/                                                "
 echo -e "${NC}"
-echo "Local-first AI image generation studio"
+echo "Local-first AI creative studio — by Wyltek Industries"
 echo ""
 
 # --- Check Python ---
@@ -80,7 +80,7 @@ else
 fi
 
 # --- Clone or detect existing install ---
-step "Setting up Open Palette"
+step "Setting up Wyltek Studio"
 
 if [ -f "$INSTALL_DIR/server.py" ] && [ -f "$INSTALL_DIR/scoring.py" ]; then
   info "Existing installation found at $INSTALL_DIR"
@@ -92,7 +92,7 @@ else
     echo "Clone into: $INSTALL_DIR? [Y/n] "
     read -r answer
     if [ "${answer:-Y}" != "n" ] && [ "${answer:-Y}" != "N" ]; then
-      git clone https://github.com/toastmanAu/open-palette.git "$INSTALL_DIR"
+      git clone https://github.com/toastmanAu/wyltek-studio.git "$INSTALL_DIR"
       cd "$INSTALL_DIR"
     fi
   fi
@@ -200,11 +200,11 @@ fi
 # --- Systemd service (optional) ---
 step "System service (optional)"
 
-SERVICE_PATH="$HOME/.config/systemd/user/open-palette.service"
+SERVICE_PATH="$HOME/.config/systemd/user/wyltek-studio.service"
 if [ -f "$SERVICE_PATH" ]; then
   info "Systemd service already exists"
-  echo "    Status:  systemctl --user status open-palette"
-  echo "    Restart: systemctl --user restart open-palette"
+  echo "    Status:  systemctl --user status wyltek-studio"
+  echo "    Restart: systemctl --user restart wyltek-studio"
 else
   echo "Install as a systemd user service? (auto-starts on login) [y/N] "
   read -r answer
@@ -212,7 +212,7 @@ else
     mkdir -p "$(dirname "$SERVICE_PATH")"
     cat > "$SERVICE_PATH" << EOF
 [Unit]
-Description=Open Palette — local AI image generation studio
+Description=Wyltek Studio — local AI image generation studio
 After=network.target
 
 [Service]
@@ -227,8 +227,8 @@ Environment=PYTHONUNBUFFERED=1
 WantedBy=default.target
 EOF
     systemctl --user daemon-reload
-    systemctl --user enable open-palette
-    systemctl --user start open-palette
+    systemctl --user enable wyltek-studio
+    systemctl --user start wyltek-studio
     info "Service installed and started"
   else
     info "Skipped — run manually with: python server.py"
@@ -242,7 +242,7 @@ PORT=$(grep -oP 'port:\s*\K[0-9]+' config.yaml 2>/dev/null | head -1)
 PORT="${PORT:-7860}"
 
 echo ""
-echo -e "  ${BOLD}Open Palette is ready!${NC}"
+echo -e "  ${BOLD}Wyltek Studio is ready!${NC}"
 echo ""
 echo -e "  Start:   ${GREEN}cd $INSTALL_DIR && source venv/bin/activate && python server.py${NC}"
 echo -e "  Open:    ${GREEN}http://localhost:$PORT${NC}"

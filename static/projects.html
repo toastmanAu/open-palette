@@ -102,17 +102,110 @@
     }
     .pool-empty { color: var(--text-dim); font-size: 13px; padding: 20px; text-align: center; width: 100%; }
 
-    /* Timeline placeholder */
+    /* Timeline */
     .timeline-section {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-      padding: 16px; margin-bottom: 16px; min-height: 200px;
+      padding: 16px; margin-bottom: 16px;
     }
-    .timeline-section h4 { margin: 0 0 12px 0; font-size: 13px; color: var(--text-dim); }
-    .timeline-placeholder {
-      border: 2px dashed var(--border); border-radius: 8px; padding: 40px;
-      text-align: center; color: var(--text-dim); font-size: 13px;
+    .timeline-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
     }
-    .timeline-placeholder .coming { font-size: 11px; margin-top: 8px; opacity: 0.5; }
+    .timeline-header h4 { margin: 0; font-size: 13px; color: var(--text-dim); }
+    .timeline-info { font-size: 11px; color: var(--text-dim); }
+    .btn-export {
+      padding: 6px 16px; font-size: 12px; background: var(--accent);
+      color: #fff; border: none; border-radius: 6px; cursor: pointer;
+    }
+    .btn-export:hover { background: var(--accent-hover); }
+    .btn-export:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Track */
+    .timeline-track {
+      min-height: 60px; border: 2px dashed var(--border); border-radius: 8px;
+      display: flex; align-items: center; padding: 6px; gap: 2px;
+      margin-bottom: 8px; overflow-x: auto; position: relative;
+    }
+    .timeline-track.drag-over { border-color: var(--accent); background: var(--accent-dim); }
+    .track-label {
+      position: absolute; top: 2px; left: 8px; font-size: 9px;
+      color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .track-empty {
+      width: 100%; text-align: center; color: var(--text-dim); font-size: 12px;
+      padding: 14px; pointer-events: none;
+    }
+
+    /* Clip blocks on timeline */
+    .tl-clip {
+      flex-shrink: 0; height: 52px; border-radius: 6px; overflow: hidden;
+      cursor: pointer; border: 2px solid transparent; position: relative;
+      display: flex; align-items: center; background: var(--surface-2);
+    }
+    .tl-clip:hover { border-color: var(--accent); }
+    .tl-clip.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+    .tl-clip img { height: 100%; width: auto; }
+    .tl-clip .clip-dur {
+      position: absolute; bottom: 2px; right: 4px; font-size: 9px;
+      background: rgba(0,0,0,0.7); color: #fff; padding: 1px 4px; border-radius: 3px;
+    }
+    .tl-clip .clip-trans {
+      position: absolute; top: 2px; left: 4px; font-size: 8px;
+      background: var(--accent-dim); color: var(--accent); padding: 1px 4px; border-radius: 3px;
+    }
+
+    /* Audio bars */
+    .tl-audio {
+      flex: 1; height: 32px; border-radius: 6px; display: flex;
+      align-items: center; padding: 0 10px; font-size: 11px; cursor: pointer;
+    }
+    .tl-audio.narration { background: rgba(52,211,153,0.2); color: var(--success); }
+    .tl-audio.music { background: rgba(124,92,252,0.2); color: var(--accent); }
+    .tl-audio .audio-remove {
+      margin-left: auto; cursor: pointer; opacity: 0.5; font-size: 14px;
+    }
+    .tl-audio .audio-remove:hover { opacity: 1; }
+
+    /* Clip settings panel */
+    .clip-settings {
+      display: none; margin-top: 12px; padding: 12px;
+      background: var(--surface-2); border-radius: 8px;
+    }
+    .clip-settings.active { display: block; }
+    .clip-settings h5 { margin: 0 0 8px 0; font-size: 12px; color: var(--text-dim); }
+    .cs-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+    .cs-field label {
+      display: block; font-size: 10px; color: var(--text-dim);
+      text-transform: uppercase; margin-bottom: 3px;
+    }
+    .cs-field select, .cs-field input {
+      width: 100%; padding: 6px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 12px;
+    }
+    .cs-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .cs-actions button {
+      padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    }
+    .cs-actions button:hover { border-color: var(--accent); }
+    .cs-actions .btn-remove { color: var(--error); }
+
+    /* Render progress */
+    .render-progress {
+      display: none; margin-top: 12px; padding: 12px;
+      background: var(--surface-2); border-radius: 8px; text-align: center;
+    }
+    .render-progress.active { display: block; }
+    .render-bar { height: 4px; background: var(--border); border-radius: 2px; margin: 8px 0; overflow: hidden; }
+    .render-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+    .render-msg { font-size: 12px; color: var(--text-dim); }
+
+    /* Render result */
+    .render-result { display: none; margin-top: 12px; }
+    .render-result.active { display: block; }
+    .render-result video { width: 100%; border-radius: 8px; }
 
     /* Quick actions */
     .quick-actions {
@@ -193,12 +286,101 @@
         </div>
       </div>
 
-      <!-- Timeline (future — video orchestration) -->
+      <!-- Timeline -->
       <div class="timeline-section">
-        <h4>Timeline</h4>
-        <div class="timeline-placeholder">
-          <div>Drag images and audio from the asset pool to build your video</div>
-          <div class="coming">Video timeline — coming soon</div>
+        <div class="timeline-header">
+          <h4>Timeline</h4>
+          <div style="display:flex;align-items:center;gap:12px">
+            <span class="timeline-info" id="tl-duration">0:00</span>
+            <button class="btn-export" id="btn-export" onclick="exportVideo()" disabled>Export MP4</button>
+          </div>
+        </div>
+
+        <div class="timeline-track" id="track-video"
+             ondragover="trackDragOver(event)" ondragleave="trackDragLeave(event)" ondrop="trackDrop(event,'image')">
+          <span class="track-label">Video</span>
+          <div class="track-empty" id="video-empty">Drag images here from the asset pool above</div>
+        </div>
+
+        <div class="timeline-track" id="track-narration"
+             ondragover="trackDragOver(event)" ondragleave="trackDragLeave(event)" ondrop="trackDrop(event,'narration')">
+          <span class="track-label">Narration</span>
+          <div class="track-empty" id="narration-empty">Drag TTS audio here</div>
+        </div>
+
+        <div class="timeline-track" id="track-music"
+             ondragover="trackDragOver(event)" ondragleave="trackDragLeave(event)" ondrop="trackDrop(event,'music')">
+          <span class="track-label">Music</span>
+          <div class="track-empty" id="music-empty">Drag music here</div>
+        </div>
+
+        <!-- Clip settings (shown when clip selected) -->
+        <div class="clip-settings" id="clip-settings">
+          <h5>Clip Settings</h5>
+          <div class="cs-grid">
+            <div class="cs-field">
+              <label>Duration (s)</label>
+              <input type="number" id="cs-duration" min="1" max="15" step="0.5" value="5" onchange="updateClipSetting('duration')">
+            </div>
+            <div class="cs-field">
+              <label>Transition</label>
+              <select id="cs-transition" onchange="updateClipSetting('transition')">
+                <option value="fade">Fade</option>
+                <option value="dissolve">Dissolve</option>
+                <option value="slideleft">Slide Left</option>
+                <option value="slideright">Slide Right</option>
+                <option value="wipeleft">Wipe Left</option>
+                <option value="wiperight">Wipe Right</option>
+                <option value="fadeblack">Fade Black</option>
+                <option value="fadewhite">Fade White</option>
+                <option value="circlecrop">Circle</option>
+                <option value="radial">Radial</option>
+              </select>
+            </div>
+            <div class="cs-field">
+              <label>Transition Duration</label>
+              <input type="number" id="cs-trans-dur" min="0.5" max="3" step="0.5" value="1" onchange="updateClipSetting('trans_dur')">
+            </div>
+            <div class="cs-field">
+              <label>Ken Burns</label>
+              <select id="cs-kenburns" onchange="updateClipSetting('kenburns')">
+                <option value="none">None</option>
+                <option value="zoom-in">Zoom In</option>
+                <option value="zoom-out">Zoom Out</option>
+                <option value="pan-left">Pan Left</option>
+                <option value="pan-right">Pan Right</option>
+              </select>
+            </div>
+            <div class="cs-field">
+              <label>Text Overlay</label>
+              <input type="text" id="cs-text" placeholder="Optional text..." onchange="updateClipSetting('text')">
+            </div>
+            <div class="cs-field">
+              <label>Text Position</label>
+              <select id="cs-text-pos" onchange="updateClipSetting('text_pos')">
+                <option value="center">Center</option>
+                <option value="bottom">Bottom</option>
+                <option value="top">Top</option>
+              </select>
+            </div>
+          </div>
+          <div class="cs-actions">
+            <button onclick="removeSelectedClip()" class="btn-remove">Remove Clip</button>
+          </div>
+        </div>
+
+        <!-- Render progress -->
+        <div class="render-progress" id="render-progress">
+          <div class="render-msg" id="render-msg">Rendering...</div>
+          <div class="render-bar"><div class="render-fill" id="render-fill"></div></div>
+        </div>
+
+        <!-- Render result -->
+        <div class="render-result" id="render-result">
+          <video id="render-video" controls></video>
+          <div style="margin-top:8px;text-align:center">
+            <a id="render-download" href="#" download style="color:var(--accent);font-size:13px">Download MP4</a>
+          </div>
         </div>
       </div>
     </div>
@@ -284,6 +466,7 @@
 
       state.assets = await (await fetch(`/api/projects/${projectId}/assets`)).json();
       renderPool();
+      await loadTimeline();
     }
 
     function closeWorkspace() {
@@ -317,6 +500,15 @@
         const el = document.createElement('div');
         el.className = 'pool-item';
         el.title = item.meta?.prompt || item.filename;
+        el.draggable = true;
+        el.dataset.filename = item.filename;
+        el.dataset.type = item.type;
+        el.dataset.url = item.url;
+        el.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('application/json', JSON.stringify({
+            filename: item.filename, type: item.type, url: item.url
+          }));
+        });
 
         if (item.type === 'image') {
           el.innerHTML = `<img src="${item.url}" alt="">`;
@@ -345,6 +537,269 @@
       ));
       toast(`Sending ${images.length} image(s) to Generator...`);
       window.location.href = '/';
+    }
+
+    // --- Timeline ---
+    state.timeline = null;
+    state.selectedClip = null;
+    state.renderJobId = null;
+
+    async function loadTimeline() {
+      if (!state.activeProject) return;
+      try {
+        state.timeline = await (await fetch(`/api/projects/${state.activeProject}/timeline`)).json();
+      } catch (e) {
+        state.timeline = { version: 1, resolution: [1920,1080], fps: 30, clips: [], audio: { narration: null, music: null } };
+      }
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      const tl = state.timeline;
+      if (!tl) return;
+
+      // Video track
+      const track = document.getElementById('track-video');
+      const empty = document.getElementById('video-empty');
+      // Remove existing clips (keep label and empty)
+      track.querySelectorAll('.tl-clip').forEach(el => el.remove());
+
+      if (tl.clips.length === 0) {
+        empty.style.display = 'block';
+      } else {
+        empty.style.display = 'none';
+        tl.clips.forEach((clip, i) => {
+          const el = document.createElement('div');
+          el.className = 'tl-clip' + (state.selectedClip === i ? ' selected' : '');
+          const widthPx = Math.max(clip.duration * 16, 48); // 16px per second
+          el.style.width = widthPx + 'px';
+          el.dataset.index = i;
+
+          const asset = state.assets.find(a => a.filename === clip.asset);
+          const thumbUrl = asset ? asset.url : `/storage/${clip.asset}`;
+
+          el.innerHTML = `
+            <img src="${thumbUrl}" alt="">
+            <span class="clip-dur">${clip.duration}s</span>
+            ${i > 0 ? `<span class="clip-trans">${clip.transition?.type || 'fade'}</span>` : ''}
+          `;
+          el.onclick = () => selectClip(i);
+          track.appendChild(el);
+        });
+      }
+
+      // Narration track
+      const narTrack = document.getElementById('track-narration');
+      narTrack.querySelectorAll('.tl-audio').forEach(el => el.remove());
+      const narEmpty = document.getElementById('narration-empty');
+      if (tl.audio?.narration?.asset) {
+        narEmpty.style.display = 'none';
+        const bar = document.createElement('div');
+        bar.className = 'tl-audio narration';
+        bar.innerHTML = `&#9835; ${tl.audio.narration.asset} <span class="audio-remove" onclick="removeAudio('narration')">&#10005;</span>`;
+        narTrack.appendChild(bar);
+      } else {
+        narEmpty.style.display = 'block';
+      }
+
+      // Music track
+      const musTrack = document.getElementById('track-music');
+      musTrack.querySelectorAll('.tl-audio').forEach(el => el.remove());
+      const musEmpty = document.getElementById('music-empty');
+      if (tl.audio?.music?.asset) {
+        musEmpty.style.display = 'none';
+        const bar = document.createElement('div');
+        bar.className = 'tl-audio music';
+        bar.innerHTML = `&#127925; ${tl.audio.music.asset} <span class="audio-remove" onclick="removeAudio('music')">&#10005;</span>`;
+        musTrack.appendChild(bar);
+      } else {
+        musEmpty.style.display = 'block';
+      }
+
+      // Update duration display
+      updateTimelineInfo();
+
+      // Enable/disable export
+      document.getElementById('btn-export').disabled = tl.clips.length === 0;
+    }
+
+    function updateTimelineInfo() {
+      const tl = state.timeline;
+      if (!tl || !tl.clips.length) {
+        document.getElementById('tl-duration').textContent = '0:00';
+        return;
+      }
+      let total = 0;
+      tl.clips.forEach((c, i) => {
+        total += c.duration;
+        if (i > 0) total -= (c.transition?.duration || 1.0);
+      });
+      const mins = Math.floor(total / 60);
+      const secs = Math.floor(total % 60);
+      document.getElementById('tl-duration').textContent = `${mins}:${secs.toString().padStart(2, '0')} | ${tl.clips.length} clips`;
+    }
+
+    // Clip selection & settings
+    function selectClip(index) {
+      state.selectedClip = index;
+      renderTimeline();
+      const clip = state.timeline.clips[index];
+      if (!clip) return;
+
+      const panel = document.getElementById('clip-settings');
+      panel.classList.add('active');
+      document.getElementById('cs-duration').value = clip.duration;
+      document.getElementById('cs-transition').value = clip.transition?.type || 'fade';
+      document.getElementById('cs-trans-dur').value = clip.transition?.duration || 1;
+      document.getElementById('cs-kenburns').value = clip.ken_burns?.effect || 'none';
+      document.getElementById('cs-text').value = clip.text_overlay?.text || '';
+      document.getElementById('cs-text-pos').value = clip.text_overlay?.position || 'center';
+    }
+
+    function updateClipSetting(field) {
+      if (state.selectedClip === null) return;
+      const clip = state.timeline.clips[state.selectedClip];
+
+      if (field === 'duration') clip.duration = parseFloat(document.getElementById('cs-duration').value);
+      if (field === 'transition') clip.transition = { ...clip.transition, type: document.getElementById('cs-transition').value };
+      if (field === 'trans_dur') clip.transition = { ...clip.transition, duration: parseFloat(document.getElementById('cs-trans-dur').value) };
+      if (field === 'kenburns') clip.ken_burns = { effect: document.getElementById('cs-kenburns').value, intensity: 1.0 };
+      if (field === 'text') {
+        const text = document.getElementById('cs-text').value.trim();
+        clip.text_overlay = text ? {
+          text, position: document.getElementById('cs-text-pos').value,
+          font_size: 48, font_color: 'white', start_offset: 0, display_duration: clip.duration
+        } : null;
+      }
+      if (field === 'text_pos' && clip.text_overlay) {
+        clip.text_overlay.position = document.getElementById('cs-text-pos').value;
+      }
+
+      renderTimeline();
+      queueSave();
+    }
+
+    function removeSelectedClip() {
+      if (state.selectedClip === null) return;
+      state.timeline.clips.splice(state.selectedClip, 1);
+      state.selectedClip = null;
+      document.getElementById('clip-settings').classList.remove('active');
+      renderTimeline();
+      queueSave();
+    }
+
+    function removeAudio(type) {
+      if (state.timeline.audio) state.timeline.audio[type] = null;
+      renderTimeline();
+      queueSave();
+    }
+
+    // Drag and drop
+    function trackDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function trackDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+
+    function trackDrop(e, trackType) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+
+      let data;
+      try { data = JSON.parse(e.dataTransfer.getData('application/json')); } catch { return; }
+
+      if (trackType === 'image' && data.type === 'image') {
+        const clip = {
+          id: 'c' + Date.now(),
+          asset: data.filename,
+          duration: 5.0,
+          transition: { type: 'fade', duration: 1.0 },
+          ken_burns: { effect: 'none', intensity: 1.0 },
+          text_overlay: null,
+        };
+        state.timeline.clips.push(clip);
+        renderTimeline();
+        queueSave();
+      } else if (trackType === 'narration' && data.type === 'audio') {
+        state.timeline.audio.narration = { asset: data.filename, volume: 1.0, offset: 0 };
+        renderTimeline();
+        queueSave();
+      } else if (trackType === 'music' && data.type === 'audio') {
+        state.timeline.audio.music = { asset: data.filename, volume: 0.3, offset: 0 };
+        renderTimeline();
+        queueSave();
+      }
+    }
+
+    // Save (debounced)
+    let _saveTimeout = null;
+    function queueSave() {
+      if (_saveTimeout) clearTimeout(_saveTimeout);
+      _saveTimeout = setTimeout(saveTimeline, 500);
+    }
+
+    async function saveTimeline() {
+      if (!state.activeProject || !state.timeline) return;
+      await fetch(`/api/projects/${state.activeProject}/timeline`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(state.timeline),
+      });
+    }
+
+    // Export
+    async function exportVideo() {
+      if (!state.activeProject || !state.timeline?.clips.length) return;
+
+      // Save timeline first
+      await saveTimeline();
+
+      const btn = document.getElementById('btn-export');
+      btn.disabled = true;
+      btn.textContent = 'Rendering...';
+
+      document.getElementById('render-progress').classList.add('active');
+      document.getElementById('render-result').classList.remove('active');
+      document.getElementById('render-msg').textContent = 'Starting render...';
+      document.getElementById('render-fill').style.width = '0%';
+
+      try {
+        const resp = await fetch(`/api/projects/${state.activeProject}/timeline/render`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+
+        state.renderJobId = data.job_id;
+        pollRender(data.job_id);
+      } catch (e) {
+        toast('Render failed: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'Export MP4';
+        document.getElementById('render-progress').classList.remove('active');
+      }
+    }
+
+    function pollRender(jobId) {
+      const poll = setInterval(async () => {
+        const resp = await fetch(`/api/job/${jobId}`);
+        const data = await resp.json();
+
+        if (data.status === 'running') {
+          document.getElementById('render-fill').style.width = (data.progress || 0) + '%';
+          document.getElementById('render-msg').textContent = data.message || `Rendering... ${data.progress || 0}%`;
+        } else if (data.status === 'complete') {
+          clearInterval(poll);
+          document.getElementById('render-progress').classList.remove('active');
+          document.getElementById('render-result').classList.add('active');
+          document.getElementById('render-video').src = data.output_url + '?t=' + Date.now();
+          document.getElementById('render-download').href = data.output_url;
+          document.getElementById('btn-export').disabled = false;
+          document.getElementById('btn-export').textContent = 'Export MP4';
+          toast('Video rendered!');
+        } else if (data.status === 'error') {
+          clearInterval(poll);
+          document.getElementById('render-progress').classList.remove('active');
+          document.getElementById('btn-export').disabled = false;
+          document.getElementById('btn-export').textContent = 'Export MP4';
+          toast('Render error: ' + (data.error || 'unknown'));
+        }
+      }, 2000);
     }
 
     // --- Init ---

@@ -194,6 +194,38 @@ def delete_project(project_id: str) -> bool:
     return True
 
 
+DEFAULT_TIMELINE = {
+    "version": 1,
+    "resolution": [1920, 1080],
+    "fps": 30,
+    "clips": [],
+    "audio": {"narration": None, "music": None},
+}
+
+
+def get_timeline(project_id: str) -> dict:
+    """Get timeline from project.json, or return empty default."""
+    meta_path = project_dir(project_id) / "project.json"
+    if not meta_path.exists():
+        return dict(DEFAULT_TIMELINE)
+    with open(meta_path) as f:
+        meta = json.load(f)
+    return meta.get("timeline", dict(DEFAULT_TIMELINE))
+
+
+def save_timeline(project_id: str, timeline: dict) -> bool:
+    """Save timeline into project.json."""
+    meta_path = project_dir(project_id) / "project.json"
+    if not meta_path.exists():
+        return False
+    with open(meta_path) as f:
+        meta = json.load(f)
+    meta["timeline"] = timeline
+    with open(meta_path, "w") as f:
+        json.dump(meta, f, indent=2)
+    return True
+
+
 def update_project(project_id: str, updates: dict) -> dict | None:
     """Update project metadata fields."""
     meta_path = project_dir(project_id) / "project.json"

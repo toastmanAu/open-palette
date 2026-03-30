@@ -831,6 +831,96 @@ async def api_move_asset(project_id: str, request: Request):
     return JSONResponse({"error": "Asset not found"}, status_code=404)
 
 
+@app.get("/api/projects/{project_id}/timeline")
+async def api_get_timeline(project_id: str):
+    """Get project timeline."""
+    import storage as store
+    return store.get_timeline(project_id)
+
+
+@app.put("/api/projects/{project_id}/timeline")
+async def api_save_timeline(project_id: str, request: Request):
+    """Save project timeline."""
+    import storage as store
+    data = await request.json()
+    if store.save_timeline(project_id, data):
+        return {"ok": True}
+    return JSONResponse({"error": "Project not found"}, status_code=404)
+
+
+@app.post("/api/projects/{project_id}/timeline/preview")
+async def api_timeline_preview(project_id: str, request: Request):
+    """Render a single preview frame at the playhead position."""
+    import storage as store
+    from studio.video_composer import render_preview_frame
+
+    data = await request.json()
+    playhead = float(data.get("playhead", 0))
+    timeline = store.get_timeline(project_id)
+    pdir = store.project_dir(project_id)
+
+    preview_path = str(pdir / "video" / "preview.png")
+    (pdir / "video").mkdir(parents=True, exist_ok=True)
+
+    result = await render_preview_frame(timeline, pdir, playhead, preview_path)
+    if result:
+        return {"url": f"/storage/preview.png?t={int(time.time())}"}
+    return JSONResponse({"error": "No clips in timeline"}, status_code=400)
+
+
+@app.post("/api/projects/{project_id}/timeline/render")
+async def api_timeline_render(project_id: str):
+    """Start rendering the timeline to MP4."""
+    import storage as store
+    from studio.video_composer import render_video
+
+    timeline = store.get_timeline(project_id)
+    if not timeline.get("clips"):
+        return JSONResponse({"error": "Timeline has no clips"}, status_code=400)
+
+    pdir = store.project_dir(project_id)
+    (pdir / "video").mkdir(parents=True, exist_ok=True)
+
+    job_id = str(uuid.uuid4())[:8]
+    output_path = str(store.asset_path(job_id, "video", ".mp4", project_id=project_id))
+
+    jobs[job_id] = {"status": "queued", "params": {"type": "video_render", "project": project_id}, "progress": 0}
+
+    async def _run_render():
+        jobs[job_id]["status"] = "running"
+        await broadcast({"type": "job_update", "job_id": job_id, "status": "running", "progress": 0})
+
+        try:
+            async def on_progress(pct, msg=""):
+                jobs[job_id]["progress"] = pct
+                await broadcast({
+                    "type": "job_update", "job_id": job_id,
+                    "status": "running", "progress": pct, "message": msg,
+                })
+
+            meta = await render_video(timeline, pdir, output_path, on_progress)
+
+            jobs[job_id].update({
+                "status": "complete", "progress": 100,
+                "output_url": f"/storage/{job_id}.mp4",
+                **meta,
+            })
+            await broadcast({
+                "type": "job_update", "job_id": job_id,
+                "status": "complete", "progress": 100,
+                "output_url": f"/storage/{job_id}.mp4",
+            })
+        except Exception as e:
+            jobs[job_id].update({"status": "error", "error": str(e)})
+            await broadcast({
+                "type": "job_update", "job_id": job_id,
+                "status": "error", "error": str(e),
+            })
+
+    job_queue.submit_background(_run_render(), lane="render", job_id=f"vid-{job_id}")
+    return {"job_id": job_id}
+
+
 @app.get("/api/unsorted")
 async def api_list_unsorted():
     """List recent unsorted assets."""

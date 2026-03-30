@@ -115,6 +115,19 @@
             <select id="music-mode"></select>
           </div>
           <div class="ctrl-group">
+            <label>BPM</label>
+            <select id="music-bpm">
+              <option value="">Auto (from prompt)</option>
+              <option value="70">70 — Slow / Ballad</option>
+              <option value="85">85 — Lo-fi / Chill</option>
+              <option value="95">95 — Hip Hop</option>
+              <option value="110">110 — Pop / House</option>
+              <option value="120">120 — Dance / EDM</option>
+              <option value="140">140 — Drum & Bass</option>
+              <option value="160">160 — Fast / Punk</option>
+            </select>
+          </div>
+          <div class="ctrl-group">
             <label>Duration</label>
             <div class="dur-row">
               <input type="range" id="music-duration" min="5" max="30" step="1" value="15">
@@ -209,8 +222,12 @@
     });
 
     async function generateMusic() {
-      const prompt = document.getElementById('music-prompt').value.trim();
+      let prompt = document.getElementById('music-prompt').value.trim();
       if (!prompt) { toast('Enter a music description'); return; }
+      const bpm = document.getElementById('music-bpm').value;
+      if (bpm && !prompt.toLowerCase().includes('bpm')) {
+        prompt += `, ${bpm}bpm`;
+      }
 
       const btn = document.getElementById('btn-gen');
       btn.disabled = true;

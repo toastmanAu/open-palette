@@ -112,11 +112,12 @@ class MusicGenEngine:
                 if prev_wav is None:
                     wav = model.generate([prompt])
                 else:
-                    # Use last OVERLAP seconds as melody conditioning
+                    # Use last OVERLAP seconds as conditioning for next chunk
                     seed_samples = int(self.OVERLAP * sample_rate)
-                    seed = prev_wav[:, -seed_samples:]
-                    wav = model.generate_continuation(prev_wav, sample_rate,
-                                                      [prompt], prompt_sample_rate=sample_rate)
+                    seed = prev_wav[:, -seed_samples:].unsqueeze(0)
+                    wav = model.generate_continuation(
+                        seed, sample_rate, [prompt]
+                    )
 
             prev_wav = wav[0]
             audio_chunk = self._wav_to_numpy(wav[0])

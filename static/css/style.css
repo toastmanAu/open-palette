@@ -779,6 +779,26 @@ input[type="range"] {
 .opt-type.free { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
 .opt-type.paid { background: rgba(239, 68, 68, 0.15); color: var(--error); }
 
+.compare-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.btn-filter {
+  font-size: 11px;
+  padding: 4px 10px;
+  background: var(--surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+}
+.btn-filter:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;

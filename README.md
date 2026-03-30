@@ -118,7 +118,20 @@ The **OP my prompt** button uses a local LLM (via [Ollama](https://ollama.com)) 
 |---|:---:|:---:|:---:|
 | **OP'd prompt** | ![op](docs/screenshots/op-cat-realvis-gguf.png) | ![op](docs/screenshots/op-cat-lightning.png) | ![op](docs/screenshots/op-cat-schnell.png) |
 
-The OP adds scene context, character detail, and lighting direction that the models need but simple prompts leave ambiguous. Works with any Ollama-compatible model — configure in Settings.
+> **Human prompt:** "a deer in a forest"
+>
+> **OP'd prompt:** "A majestic red deer standing in a dense, sun-dappled forest during the golden hour..."
+
+| | Juggernaut XL v9 | DreamShaper XL | Juggernaut XI Q4 | Flux Schnell |
+|---|:---:|:---:|:---:|:---:|
+| **Human** | ![before](docs/screenshots/deer-human-juggernaut.png) | ![before](docs/screenshots/deer-human-dreamshaper.png) | ![before](docs/screenshots/deer-human-juggernaut-gguf.png) | ![before](docs/screenshots/deer-human-schnell.png) |
+| **OP'd** | ![after](docs/screenshots/deer-op-juggernaut.png) | ![after](docs/screenshots/deer-op-dreamshaper.png) | ![after](docs/screenshots/deer-op-juggernaut-gguf.png) | ![after](docs/screenshots/deer-op-schnell.png) |
+
+| RealVisXL V4 (OP'd) | SDXL Lightning (OP'd) |
+|:---:|:---:|
+| ![op](docs/screenshots/deer-op-realvis.png) | ![op](docs/screenshots/deer-op-lightning.png) |
+
+The OP adds scene context, lighting direction, and quality descriptors that transform simple prompts into cinematic results. Works with any Ollama-compatible model — configure in Settings.
 
 ### Auto Image Scoring
 

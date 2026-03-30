@@ -460,6 +460,25 @@ function bindEvents() {
   document.getElementById('compare-cancel').addEventListener('click', closeCompareModal);
   document.getElementById('compare-start').addEventListener('click', startComparison);
 
+  // Compare modal filter buttons
+  document.querySelectorAll('.btn-filter').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.compare-option').forEach(opt => {
+        const cb = opt.querySelector('input');
+        const type = opt.dataset.type;
+        if (filter === 'all') {
+          cb.checked = true;
+        } else if (filter === 'none') {
+          cb.checked = false;
+        } else {
+          cb.checked = (type === filter);
+        }
+        opt.classList.toggle('selected', cb.checked);
+      });
+    });
+  });
+
   // Tips
   document.getElementById('btn-tips').addEventListener('click', () => {
     document.getElementById('tips-modal').classList.add('active');
@@ -881,8 +900,9 @@ function makeCompareOption(backend, model, label, type) {
   div.className = 'compare-option';
   div.dataset.backend = backend;
   div.dataset.model = model;
+  div.dataset.type = type;
   div.innerHTML = `
-    <input type="checkbox" checked>
+    <input type="checkbox">
     <span class="opt-label">${label}</span>
     <span class="opt-type ${type}">${type}</span>
   `;
@@ -893,8 +913,6 @@ function makeCompareOption(backend, model, label, type) {
     }
     div.classList.toggle('selected', div.querySelector('input').checked);
   });
-  // Default to selected
-  div.classList.add('selected');
   return div;
 }
 

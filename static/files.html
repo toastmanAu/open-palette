@@ -162,6 +162,7 @@
     <!-- Actions bar (shown when assets selected) -->
     <div class="actions-bar" id="actions-bar" style="display:none">
       <span class="sel-count" id="sel-count">0 selected</span>
+      <button onclick="sendToGenerator()">Send to Generator</button>
       <button onclick="moveSelected()">Move to Project</button>
       <button class="btn-danger" onclick="deleteSelected()">Delete</button>
       <button onclick="clearSelection()">Clear Selection</button>
@@ -478,6 +479,18 @@
     }
 
     // --- Delete ---
+    function sendToGenerator() {
+      const images = state.unsorted
+        .filter(a => state.selected.has(a.filename) && a.type === 'image')
+        .slice(0, 4);
+      if (images.length === 0) { toast('Select some images first'); return; }
+      sessionStorage.setItem('op-ref-images', JSON.stringify(
+        images.map(img => ({ url: img.url, filename: img.filename }))
+      ));
+      toast(`Sending ${images.length} image(s) to Generator...`);
+      window.location.href = '/';
+    }
+
     async function deleteSelected() {
       if (!confirm(`Delete ${state.selected.size} files permanently?`)) return;
       // TODO: implement server-side delete endpoint

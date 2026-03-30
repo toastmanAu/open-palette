@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Open Palette — Projects</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/nav.css">
+  <script src="/static/js/nav.js"></script>
+  <style>
+    .proj-page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    /* Project list */
+    .project-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px; margin-bottom: 24px;
+    }
+    .project-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; cursor: pointer; transition: border-color 0.15s;
+    }
+    .project-card:hover { border-color: var(--accent); }
+    .project-card h4 { margin: 0 0 6px 0; font-size: 14px; }
+    .project-card .desc { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+    .project-card .counts {
+      display: flex; gap: 12px; font-size: 11px; color: var(--text-dim);
+    }
+    .project-card .date { font-size: 10px; color: var(--text-dim); margin-top: 8px; }
+    .new-project-card {
+      border-style: dashed; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; min-height: 120px;
+      color: var(--text-dim); font-size: 13px; gap: 6px;
+    }
+    .new-project-card:hover { color: var(--accent); border-color: var(--accent); }
+
+    .new-project-form {
+      display: none; padding: 16px; background: var(--surface);
+      border: 1px solid var(--accent); border-radius: var(--radius); margin-bottom: 16px;
+    }
+    .new-project-form.active { display: block; }
+    .new-project-form input, .new-project-form textarea {
+      width: 100%; padding: 8px; margin-bottom: 8px;
+      background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 13px;
+    }
+
+    /* --- Workspace (shown when project open) --- */
+    .workspace { display: none; }
+    .workspace.active { display: block; }
+
+    .ws-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
+    }
+    .ws-header h3 { margin: 0; }
+    .ws-actions { display: flex; gap: 6px; }
+    .ws-actions button {
+      padding: 6px 14px; font-size: 12px; border-radius: 6px; cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    }
+    .ws-actions button:hover { border-color: var(--accent); }
+    .ws-actions .btn-accent { border-color: var(--accent); color: var(--accent); }
+    .ws-actions .btn-accent:hover { background: var(--accent-dim); }
+    .ws-actions .btn-danger { color: var(--error); }
+
+    /* Asset pool (top strip) */
+    .asset-pool {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px; margin-bottom: 16px;
+    }
+    .pool-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .pool-header h4 { margin: 0; font-size: 13px; color: var(--text-dim); }
+    .pool-tabs { display: flex; gap: 4px; }
+    .pool-tab {
+      padding: 4px 10px; font-size: 11px; border-radius: 4px; cursor: pointer;
+      background: var(--surface-2); color: var(--text-dim); border: none;
+    }
+    .pool-tab.active { background: var(--accent-dim); color: var(--accent); }
+    .pool-strip {
+      display: flex; gap: 8px; overflow-x: auto; padding: 4px 0;
+      min-height: 80px; align-items: center;
+    }
+    .pool-item {
+      flex-shrink: 0; width: 72px; height: 72px; border-radius: 6px;
+      border: 2px solid transparent; cursor: grab; overflow: hidden;
+      position: relative;
+    }
+    .pool-item:hover { border-color: var(--accent); }
+    .pool-item img { width: 100%; height: 100%; object-fit: cover; }
+    .pool-item .pool-audio {
+      width: 100%; height: 100%; display: flex; align-items: center;
+      justify-content: center; background: var(--surface-2); font-size: 24px;
+    }
+    .pool-item .pool-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      font-size: 8px; background: rgba(0,0,0,0.7); color: var(--text);
+      padding: 2px 4px; text-align: center; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .pool-empty { color: var(--text-dim); font-size: 13px; padding: 20px; text-align: center; width: 100%; }
+
+    /* Timeline placeholder */
+    .timeline-section {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; margin-bottom: 16px; min-height: 200px;
+    }
+    .timeline-section h4 { margin: 0 0 12px 0; font-size: 13px; color: var(--text-dim); }
+    .timeline-placeholder {
+      border: 2px dashed var(--border); border-radius: 8px; padding: 40px;
+      text-align: center; color: var(--text-dim); font-size: 13px;
+    }
+    .timeline-placeholder .coming { font-size: 11px; margin-top: 8px; opacity: 0.5; }
+
+    /* Quick actions */
+    .quick-actions {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px; margin-bottom: 16px;
+    }
+    .quick-action {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 14px; cursor: pointer; text-align: center; transition: all 0.15s;
+    }
+    .quick-action:hover { border-color: var(--accent); background: var(--accent-dim); }
+    .quick-action .qa-icon { font-size: 24px; margin-bottom: 6px; }
+    .quick-action .qa-label { font-size: 13px; font-weight: 600; }
+    .quick-action .qa-desc { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="proj-page">
+    <!-- Project list -->
+    <div id="project-list">
+      <h2>Projects</h2>
+
+      <div class="new-project-form" id="new-project-form">
+        <input type="text" id="np-name" placeholder="Project name">
+        <textarea id="np-desc" placeholder="Description (optional)" rows="2"></textarea>
+        <div style="display:flex;gap:8px">
+          <button onclick="createProject()" style="padding:6px 16px;font-size:13px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer">Create</button>
+          <button onclick="toggleForm(false)" style="padding:6px 16px;font-size:13px;background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:6px;cursor:pointer">Cancel</button>
+        </div>
+      </div>
+
+      <div class="project-grid" id="project-grid"></div>
+    </div>
+
+    <!-- Workspace (shown when project opened) -->
+    <div class="workspace" id="workspace">
+      <div class="ws-header">
+        <h3 id="ws-name"></h3>
+        <div class="ws-actions">
+          <button onclick="sendToGenerator()" class="btn-accent">Send to Generator</button>
+          <button onclick="deleteProject()" class="btn-danger">Delete</button>
+          <button onclick="closeWorkspace()">Back to Projects</button>
+        </div>
+      </div>
+      <p id="ws-desc" style="font-size:13px;color:var(--text-dim);margin-bottom:16px"></p>
+
+      <!-- Quick actions -->
+      <div class="quick-actions">
+        <div class="quick-action" onclick="window.location.href='/'">
+          <div class="qa-icon">&#9998;</div>
+          <div class="qa-label">Generate Images</div>
+          <div class="qa-desc">Create new images for this project</div>
+        </div>
+        <div class="quick-action" onclick="window.location.href='/studio/tts'">
+          <div class="qa-icon">&#9835;</div>
+          <div class="qa-label">Generate Narration</div>
+          <div class="qa-desc">Create TTS audio for this project</div>
+        </div>
+        <div class="quick-action" onclick="window.location.href='/files'">
+          <div class="qa-icon">&#128194;</div>
+          <div class="qa-label">Import from Files</div>
+          <div class="qa-desc">Move unsorted assets into this project</div>
+        </div>
+      </div>
+
+      <!-- Asset pool -->
+      <div class="asset-pool">
+        <div class="pool-header">
+          <h4>Project Assets</h4>
+          <div class="pool-tabs">
+            <button class="pool-tab active" onclick="filterPool('all', this)">All</button>
+            <button class="pool-tab" onclick="filterPool('image', this)">Images</button>
+            <button class="pool-tab" onclick="filterPool('audio', this)">Audio</button>
+          </div>
+        </div>
+        <div class="pool-strip" id="pool-strip">
+          <div class="pool-empty">No assets yet. Generate images or import from Files.</div>
+        </div>
+      </div>
+
+      <!-- Timeline (future — video orchestration) -->
+      <div class="timeline-section">
+        <h4>Timeline</h4>
+        <div class="timeline-placeholder">
+          <div>Drag images and audio from the asset pool to build your video</div>
+          <div class="coming">Video timeline — coming soon</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="saved-msg" id="toast-msg"></div>
+
+  <script>
+    let state = { projects: [], activeProject: null, assets: [], poolFilter: 'all' };
+
+    function toast(msg) {
+      const el = document.getElementById('toast-msg');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    // --- Project list ---
+    async function loadProjects() {
+      try {
+        state.projects = await (await fetch('/api/projects')).json();
+      } catch (e) { state.projects = []; }
+
+      const grid = document.getElementById('project-grid');
+      grid.innerHTML = '';
+
+      const newCard = document.createElement('div');
+      newCard.className = 'project-card new-project-card';
+      newCard.onclick = () => toggleForm(true);
+      newCard.innerHTML = '<span style="font-size:24px">+</span><span>New Project</span>';
+      grid.appendChild(newCard);
+
+      state.projects.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        const counts = p.asset_counts || {};
+        const total = Object.values(counts).reduce((a, b) => a + b, 0);
+        const date = p.created ? new Date(p.created).toLocaleDateString() : '';
+        card.innerHTML = `
+          <h4>${p.name}</h4>
+          <div class="desc">${p.description || ''}</div>
+          <div class="counts">
+            ${counts.image ? `<span>&#128247; ${counts.image}</span>` : ''}
+            ${counts.audio ? `<span>&#9835; ${counts.audio}</span>` : ''}
+            ${total === 0 ? '<span>Empty project</span>' : ''}
+          </div>
+          <div class="date">Created ${date}</div>
+        `;
+        card.onclick = () => openWorkspace(p.id);
+        grid.appendChild(card);
+      });
+    }
+
+    function toggleForm(show) {
+      document.getElementById('new-project-form').classList.toggle('active', show);
+      if (show) document.getElementById('np-name').focus();
+    }
+
+    async function createProject() {
+      const name = document.getElementById('np-name').value.trim();
+      if (!name) return;
+      await fetch('/api/projects', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, description: document.getElementById('np-desc').value.trim() }),
+      });
+      document.getElementById('np-name').value = '';
+      document.getElementById('np-desc').value = '';
+      toggleForm(false);
+      toast('Project created');
+      loadProjects();
+    }
+
+    // --- Workspace ---
+    async function openWorkspace(projectId) {
+      state.activeProject = projectId;
+      document.getElementById('project-list').style.display = 'none';
+      document.getElementById('workspace').classList.add('active');
+
+      const meta = await (await fetch(`/api/projects/${projectId}`)).json();
+      document.getElementById('ws-name').textContent = meta.name;
+      document.getElementById('ws-desc').textContent = meta.description || '';
+
+      state.assets = await (await fetch(`/api/projects/${projectId}/assets`)).json();
+      renderPool();
+    }
+
+    function closeWorkspace() {
+      state.activeProject = null;
+      document.getElementById('workspace').classList.remove('active');
+      document.getElementById('project-list').style.display = 'block';
+      loadProjects();
+    }
+
+    async function deleteProject() {
+      if (!confirm('Delete this project and all its assets?')) return;
+      await fetch(`/api/projects/${state.activeProject}`, { method: 'DELETE' });
+      toast('Project deleted');
+      closeWorkspace();
+    }
+
+    // --- Asset pool ---
+    function renderPool() {
+      const strip = document.getElementById('pool-strip');
+      const filtered = state.poolFilter === 'all'
+        ? state.assets
+        : state.assets.filter(a => a.type === state.poolFilter);
+
+      if (filtered.length === 0) {
+        strip.innerHTML = '<div class="pool-empty">No assets. Use the quick actions above to add content.</div>';
+        return;
+      }
+
+      strip.innerHTML = '';
+      filtered.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'pool-item';
+        el.title = item.meta?.prompt || item.filename;
+
+        if (item.type === 'image') {
+          el.innerHTML = `<img src="${item.url}" alt="">`;
+        } else if (item.type === 'audio') {
+          const name = item.meta?.voice || item.filename.split('.')[0];
+          el.innerHTML = `<div class="pool-audio">&#9835;</div><div class="pool-label">${name}</div>`;
+        }
+
+        strip.appendChild(el);
+      });
+    }
+
+    function filterPool(type, btn) {
+      state.poolFilter = type;
+      document.querySelectorAll('.pool-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderPool();
+    }
+
+    // --- Send to Generator ---
+    function sendToGenerator() {
+      const images = state.assets.filter(a => a.type === 'image').slice(0, 4);
+      if (images.length === 0) { toast('No images to send'); return; }
+      sessionStorage.setItem('op-ref-images', JSON.stringify(
+        images.map(img => ({ url: img.url, filename: img.filename }))
+      ));
+      toast(`Sending ${images.length} image(s) to Generator...`);
+      window.location.href = '/';
+    }
+
+    // --- Init ---
+    loadProjects();
+  </script>
+</body>
+</html>

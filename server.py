@@ -81,6 +81,11 @@ async def files_page():
     return FileResponse("static/files.html")
 
 
+@app.get("/projects")
+async def projects_page():
+    return FileResponse("static/projects.html")
+
+
 @app.get("/studio/tts")
 async def tts_page():
     return FileResponse("static/studio/tts.html")

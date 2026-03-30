@@ -160,6 +160,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       state.opStatus = { available: false, reason: 'Could not reach server' };
       document.getElementById('btn-op-prompt').classList.add('unavailable');
     });
+
+  // Check for images sent from Projects page
+  const refData = sessionStorage.getItem('op-ref-images');
+  if (refData) {
+    sessionStorage.removeItem('op-ref-images');
+    try {
+      const refs = JSON.parse(refData);
+      refs.forEach(async (ref, i) => {
+        if (i >= 4) return;
+        const resp = await fetch(ref.url);
+        const blob = await resp.blob();
+        const file = new File([blob], ref.filename, { type: blob.type });
+        setRefImage(i, file);
+      });
+      toast(`Loaded ${Math.min(refs.length, 4)} reference image(s) from project`, 'success');
+    } catch (e) {}
+  }
 });
 
 async function loadBackends() {

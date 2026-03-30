@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wyltek Studio — Music Studio</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/nav.css">
+  <script src="/static/js/nav.js"></script>
+  <style>
+    .music-page { max-width: 800px; margin: 0 auto; padding: 32px 24px; }
+    .music-page h2 { margin-bottom: 4px; }
+    .music-page .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+
+    .prompt-input {
+      width: 100%; padding: 14px; min-height: 80px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text); font-size: 14px;
+      resize: vertical;
+    }
+    .prompt-input:focus { outline: none; border-color: var(--accent); }
+
+    .controls { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; align-items: end; }
+    .ctrl-group { display: flex; flex-direction: column; gap: 4px; }
+    .ctrl-group label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+    .ctrl-group select, .ctrl-group input {
+      padding: 8px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); min-width: 140px;
+    }
+    .dur-row { display: flex; align-items: center; gap: 8px; }
+    .dur-row input { min-width: 80px; }
+    .dur-val { font-size: 12px; color: var(--text-dim); font-family: monospace; }
+
+    .actions { display: flex; gap: 8px; margin: 16px 0; }
+    .btn-gen {
+      padding: 10px 24px; background: var(--accent); color: #fff;
+      border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .btn-gen:hover { background: var(--accent-hover); }
+    .btn-gen:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .result {
+      display: none; margin: 20px 0; padding: 16px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    }
+    .result.active { display: block; }
+    .result audio { width: 100%; margin: 8px 0; }
+    .result-meta { font-size: 12px; color: var(--text-dim); display: flex; gap: 16px; }
+
+    .presets { margin: 16px 0; }
+    .presets h4 { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .preset-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .preset-chip {
+      padding: 6px 12px; font-size: 12px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 16px;
+      cursor: pointer; color: var(--text-dim);
+    }
+    .preset-chip:hover { border-color: var(--accent); color: var(--text); }
+
+    .unavailable-msg {
+      padding: 24px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); text-align: center; color: var(--text-dim);
+    }
+    .unavailable-msg code { background: var(--surface-2); padding: 2px 6px; border-radius: 4px; }
+
+    .generating-msg {
+      padding: 20px; text-align: center; color: var(--text-dim); font-size: 14px;
+    }
+    .generating-msg .spinner {
+      display: inline-block; width: 16px; height: 16px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="music-page">
+    <h2>Music Studio</h2>
+    <p class="subtitle">Generate royalty-free backing tracks from text descriptions using MusicGen.</p>
+
+    <div id="content">
+      <div class="unavailable-msg" id="unavailable" style="display:none">
+        <p>MusicGen is not installed yet.</p>
+        <p style="margin-top:8px">Install it: <code>pip install audiocraft</code></p>
+        <p style="margin-top:4px;font-size:12px">Also requires FFmpeg dev libraries: <code>sudo apt install libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libswscale-dev libswresample-dev</code></p>
+      </div>
+
+      <div id="generator" style="display:none">
+        <textarea class="prompt-input" id="music-prompt" placeholder="Describe the music you want...&#10;e.g. upbeat electronic lo-fi beat, 90bpm, chill, no vocals"></textarea>
+
+        <div class="presets">
+          <h4>Quick Presets</h4>
+          <div class="preset-grid">
+            <span class="preset-chip" onclick="setPreset('upbeat lo-fi hip hop beat, chill, relaxing, no vocals, 85bpm')">Lo-fi Chill</span>
+            <span class="preset-chip" onclick="setPreset('epic cinematic orchestral music, dramatic, building tension, no vocals')">Epic Cinematic</span>
+            <span class="preset-chip" onclick="setPreset('gentle acoustic guitar melody, warm, peaceful, fingerpicking, no vocals')">Acoustic Guitar</span>
+            <span class="preset-chip" onclick="setPreset('electronic ambient music, ethereal pads, slow, atmospheric, no vocals')">Ambient</span>
+            <span class="preset-chip" onclick="setPreset('upbeat pop electronic music, energetic, happy, dance, no vocals, 120bpm')">Upbeat Pop</span>
+            <span class="preset-chip" onclick="setPreset('jazz piano trio, smooth, warm, brushed drums, upright bass, no vocals')">Jazz Trio</span>
+            <span class="preset-chip" onclick="setPreset('retro 8-bit chiptune music, video game style, energetic, no vocals')">Chiptune</span>
+            <span class="preset-chip" onclick="setPreset('dark ambient drone, minimal, unsettling, cinematic tension, no vocals')">Dark Ambient</span>
+            <span class="preset-chip" onclick="setPreset('corporate background music, professional, uplifting, light piano and strings, no vocals')">Corporate</span>
+            <span class="preset-chip" onclick="setPreset('tropical house music, warm, summer vibes, steel drums, no vocals, 110bpm')">Tropical</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="ctrl-group">
+            <label>Model</label>
+            <select id="music-model"></select>
+          </div>
+          <div class="ctrl-group">
+            <label>Duration</label>
+            <div class="dur-row">
+              <input type="range" id="music-duration" min="5" max="30" step="1" value="15">
+              <span class="dur-val" id="dur-val">15s</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn-gen" id="btn-gen" onclick="generateMusic()">Generate Track</button>
+        </div>
+
+        <div id="generating" class="generating-msg" style="display:none">
+          <span class="spinner"></span>
+          Generating music... This takes 30-90 seconds on CPU.
+        </div>
+
+        <div class="result" id="result">
+          <strong>Generated Track</strong>
+          <audio id="result-audio" controls></audio>
+          <div class="result-meta" id="result-meta"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="saved-msg" id="toast-msg"></div>
+
+  <script>
+    function toast(msg) {
+      const el = document.getElementById('toast-msg');
+      el.textContent = msg; el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    function setPreset(text) {
+      document.getElementById('music-prompt').value = text;
+    }
+
+    async function init() {
+      const resp = await fetch('/api/music/status');
+      const data = await resp.json();
+
+      if (!data.available) {
+        document.getElementById('unavailable').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('generator').style.display = 'block';
+      const select = document.getElementById('music-model');
+      data.models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = `${m.name} (${m.params})`;
+        select.appendChild(opt);
+      });
+    }
+
+    document.getElementById('music-duration').addEventListener('input', (e) => {
+      document.getElementById('dur-val').textContent = e.target.value + 's';
+    });
+
+    async function generateMusic() {
+      const prompt = document.getElementById('music-prompt').value.trim();
+      if (!prompt) { toast('Enter a music description'); return; }
+
+      const btn = document.getElementById('btn-gen');
+      btn.disabled = true;
+      document.getElementById('generating').style.display = 'block';
+      document.getElementById('result').classList.remove('active');
+
+      try {
+        const resp = await fetch('/api/music/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            prompt,
+            model: document.getElementById('music-model').value,
+            duration: parseInt(document.getElementById('music-duration').value),
+          }),
+        });
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+
+        document.getElementById('result').classList.add('active');
+        const audio = document.getElementById('result-audio');
+        audio.src = data.url + '?t=' + Date.now();
+        audio.play();
+
+        document.getElementById('result-meta').innerHTML = `
+          <span>Duration: ${data.duration}s</span>
+          <span>Model: ${data.model.split('/').pop()}</span>
+          <span>Size: ${(data.file_size / 1024).toFixed(0)} KB</span>
+        `;
+        toast('Track generated!');
+      } catch (e) {
+        toast('Generation failed: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        document.getElementById('generating').style.display = 'none';
+      }
+    }
+
+    document.getElementById('music-prompt').addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generateMusic();
+    });
+
+    init();
+  </script>
+</body>
+</html>

@@ -5,6 +5,7 @@
     { section: 'Create' },
     { href: '/',           icon: '&#9998;',  label: 'Generate',    id: 'generate' },
     { href: '/studio/tts', icon: '&#9835;',  label: 'TTS Studio',  id: 'tts' },
+    { href: '/studio/music', icon: '&#127925;', label: 'Music Studio', id: 'music' },
     { section: 'Manage' },
     { href: '/files',      icon: '&#128194;', label: 'Files',      id: 'files' },
     { section: 'Produce' },
@@ -16,7 +17,8 @@
   // Determine active page from current path
   const path = window.location.pathname;
   let activeId = 'generate';
-  if (path.startsWith('/studio/tts')) activeId = 'tts';
+  if (path.startsWith('/studio/music')) activeId = 'music';
+  else if (path.startsWith('/studio/tts')) activeId = 'tts';
   else if (path.startsWith('/projects')) activeId = 'projects';
   else if (path.startsWith('/files')) activeId = 'files';
   else if (path.startsWith('/settings')) activeId = 'settings';

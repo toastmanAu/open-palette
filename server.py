@@ -91,6 +91,11 @@ async def tts_page():
     return FileResponse("static/studio/tts.html")
 
 
+@app.get("/studio/music")
+async def music_page():
+    return FileResponse("static/studio/music.html")
+
+
 # --- Settings API ---
 
 ENV_KEY_MAP = {
@@ -841,6 +846,67 @@ async def serve_storage_file(filename: str):
     if path and path.exists():
         return FileResponse(str(path))
     return JSONResponse({"error": "File not found"}, status_code=404)
+
+
+# --- Music Generation API ---
+
+_music_engine = None
+
+
+def _get_music_engine():
+    global _music_engine
+    if _music_engine is None:
+        try:
+            from studio.music_gen import MusicGenEngine
+            engine = MusicGenEngine(config.get("music", {}))
+            if engine.available():
+                _music_engine = engine
+        except Exception:
+            pass
+    return _music_engine
+
+
+@app.get("/api/music/status")
+async def music_status():
+    """Check if music generation is available."""
+    engine = _get_music_engine()
+    if engine:
+        return {"available": True, "models": engine.models()}
+    return {"available": False, "reason": "audiocraft not installed (pip install audiocraft)"}
+
+
+@app.post("/api/music/generate")
+async def music_generate(request: Request):
+    """Generate music from a text prompt."""
+    engine = _get_music_engine()
+    if not engine:
+        return JSONResponse({"error": "Music generation not available"}, status_code=503)
+
+    data = await request.json()
+    prompt = data.get("prompt", "").strip()
+    duration = min(float(data.get("duration", 15)), 30)
+    model_id = data.get("model", "")
+
+    if not prompt:
+        return JSONResponse({"error": "No prompt provided"}, status_code=400)
+
+    job_id = str(uuid.uuid4())[:8]
+    import storage as store
+    output_path = str(store.asset_path(job_id, "audio", ".wav"))
+
+    async def _do():
+        return await engine.generate(prompt, output_path, duration, model_id or None)
+
+    try:
+        meta = await job_queue.submit(_do(), lane="cpu", job_id=f"music-{job_id}")
+        return {
+            "job_id": job_id,
+            "url": f"/storage/{job_id}.wav",
+            "prompt": prompt,
+            **meta,
+        }
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 # --- TTS API ---
